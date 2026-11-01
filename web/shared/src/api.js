@@ -179,7 +179,14 @@ export function createApi(http) {
   return {
     auth: {
       login: (data) => http.post('/auth/login', data),
-      me: () => http.get('/auth/me')
+      me: () => http.get('/auth/me'),
+      // ---- 客户手机号注册（走 /api/public 白名单，无需登录）----
+      /** 发送注册验证码，返回 { expireIn, devCode, tip }；演示环境 devCode 里带验证码 */
+      sendSmsCode: (mobile) => http.post('/public/auth/sms-code', { mobile }),
+      /** 注册并直接登录，返回结构与 login 一致 */
+      register: (data) => http.post('/public/auth/register', data),
+      /** 手机号是否已注册 */
+      mobileCheck: (mobile) => http.get('/public/auth/mobile-check', { params: { mobile } })
     },
     client,
     admin

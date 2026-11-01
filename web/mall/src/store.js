@@ -39,6 +39,11 @@ export function isLogin() {
 
 export async function login(username, password) {
   const data = await api.auth.login({ username, password })
+  return applyLogin(data)
+}
+
+/** 注册接口返回的结构和登录一致，直接落地登录态 */
+export function applyLogin(data) {
   localStorage.setItem(TOKEN_KEY, data.token)
   localStorage.setItem(USER_KEY, JSON.stringify(data))
   auth.user = data

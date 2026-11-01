@@ -21,8 +21,32 @@ import { fileURLToPath } from 'node:url'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.join(HERE, 'html')
-const BACKEND = process.env.BACKEND || 'http://127.0.0.1:8080'
+
+// 后端地址：没显式给 BACKEND 就依次探测谁活着
+// 8081 第一位是因为 scripts/start-backend.bat 起的新版 jar 在 8081；
+// 它没跑时自动回落到 IDEA 里的 8080（ErpApplication）
+const CANDIDATES = process.env.BACKEND
+  ? [process.env.BACKEND]
+  : ['http://127.0.0.1:8081', 'http://127.0.0.1:8080', 'http://127.0.0.1:8082']
+let BACKEND = CANDIDATES[0]
+
 const PORT = Number(process.env.PORT || 8090)
+
+/** 探测后端是否在跑，1 秒超时，避免卡住启动 */
+async function probeBackend() {
+  for (const b of CANDIDATES) {
+    try {
+      const controller = new AbortController()
+      const timer = setTimeout(() => controller.abort(), 1000)
+      const r = await fetch(b + '/actuator/health', { signal: controller.signal })
+      clearTimeout(timer)
+      if (r.ok) return { url: b, alive: true }
+    } catch (e) {
+      /* 换下一个候选 */
+    }
+  }
+  return { url: CANDIDATES[0], alive: false }
+}
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -118,15 +142,37 @@ const server = http.createServer((req, res) => {
   sendFile(res, file)
 })
 
-server.listen(PORT, () => {
-  console.log('')
-  console.log('  鑫基矿业 ERP · 本地预览')
-  console.log('  ─────────────────────────────────────────────')
-  console.log('  网页商城    http://localhost:' + PORT + '/')
-  console.log('  运营后台    http://localhost:' + PORT + '/admin/')
-  console.log('  手机端      http://localhost:' + PORT + '/m/')
-  console.log('  接口代理    ' + BACKEND)
-  console.log('  ─────────────────────────────────────────────')
-  console.log('  静态目录    ' + ROOT)
-  console.log('')
-})
+// 端口被占用就自动往后顺延，最多试 10 个
+function start(port, tried) {
+  server.once('error', (e) => {
+    if (e.code === 'EADDRINUSE' && tried < 10) {
+      console.log('  端口 ' + port + ' 已被占用，改用 ' + (port + 1))
+      setTimeout(() => start(port + 1, tried + 1), 60)
+      return
+    }
+    console.error('启动失败：' + e.message)
+    process.exit(1)
+  })
+
+  server.listen(port, async () => {
+    const probe = await probeBackend()
+    BACKEND = probe.url
+    console.log('')
+    console.log('  鑫基矿业 ERP · 本地预览')
+    console.log('  ─────────────────────────────────────────────')
+    console.log('  网页商城    http://localhost:' + port + '/')
+    console.log('  运营后台    http://localhost:' + port + '/admin/')
+    console.log('  手机端      http://localhost:' + port + '/m/')
+    console.log('  接口代理    ' + BACKEND + (probe.alive ? '（已连通）' : '（未启动！页面能开，接口会 503）'))
+    console.log('  ─────────────────────────────────────────────')
+    console.log('  静态目录    ' + ROOT)
+    if (!probe.alive) {
+      console.log('')
+      console.log('  ⚠ 后端没起来：先在 IDEA 里运行 ErpApplication，')
+      console.log('    或双击 scripts/start-backend.bat 启动打包好的 jar。')
+    }
+    console.log('')
+  })
+}
+
+start(PORT, 0)

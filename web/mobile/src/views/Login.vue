@@ -5,8 +5,8 @@
     <p class="small muted">吉林鑫基矿业 · 客户登录</p>
 
     <div class="field" style="margin-top: 24px">
-      <label>登录账号</label>
-      <input class="input" v-model="username" placeholder="请输入客户账号" />
+      <label>登录账号 / 手机号</label>
+      <input class="input" v-model="username" placeholder="客户账号或注册手机号" />
     </div>
     <div class="field">
       <label>密码</label>
@@ -18,6 +18,8 @@
     </button>
 
     <div class="err small" v-if="error">{{ error }}</div>
+
+    <p class="reg-link">还没有账号？<a @click="$router.push('/register')">手机号注册</a></p>
 
     <div class="demo">
       <span class="tiny muted">演示账号</span>
@@ -87,6 +89,9 @@ async function submit() {
 }
 h1 { font-size: 21px; font-weight: 600; }
 .err { margin-top: 12px; padding: 9px 12px; border-radius: 8px; background: var(--redsoft); color: var(--red); }
+.reg-link { margin-top: 14px; font-size: 12.5px; color: var(--muted); text-align: center; }
+.reg-link a { color: var(--brand2); cursor: pointer; }
+.reg-link a:hover { text-decoration: underline; }
 .demo { margin-top: 26px; padding-top: 16px; border-top: 1px dashed var(--line); }
 .chips { display: flex; gap: 8px; margin-top: 9px; flex-wrap: wrap; }
 .chips button {

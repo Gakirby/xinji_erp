@@ -95,7 +95,7 @@ java -Dfile.encoding=UTF-8 -jar server/target/xinji-erp.jar
 | 地址 | 是什么 |
 | --- | --- |
 | <http://localhost:8080/> | 服务入口页（导航 + 环境状态 + 三端入口说明） |
-| <http://localhost:8080/swagger-ui.html> | 接口文档，113 个接口可直接调试 |
+| <http://localhost:8080/swagger-ui.html> | 接口文档，116 个接口可直接调试 |
 | <http://localhost:8080/actuator/health> | 健康检查，MySQL/Redis 通不通看这里 |
 
 > **注意**：直接访问 `/api/client/products` 会返回 401，这是鉴权生效的正常表现。先在 Swagger 里调 `/api/auth/login` 拿 token，右上角 Authorize 填进去再调业务接口。
@@ -128,6 +128,7 @@ node deploy/preview.mjs     # 默认 8090，代理 /api 到 8080
 | <http://localhost:8090/m/> | 手机端（建议用浏览器 F12 切手机视图） |
 
 `preview.mjs` 是零依赖的 Node 脚本（不需要 npm install），它按 `deploy/nginx.conf` 的同一套规则做 history 路由回退和 `/api` 反向代理，用来在没装 nginx 的机器上验证路由行为。
+后端地址不用手动指定：它按 `8081 → 8080 → 8082` 探测谁活着（`start-backend.bat` 起的 jar 在 8081，IDEA 里跑的在 8080），探测不到会明确提示「后端没起来」。
 
 **方式 B：整站 Docker（含 nginx + MySQL + Redis）**
 
@@ -137,6 +138,21 @@ docker compose up -d --build
 ```
 
 启动后 nginx 监听 `80`，直接访问 <http://localhost/> 即可（需要 Docker Desktop 已启动）。
+
+**方式 C：双击脚本启动（适合不敲命令行）**
+
+`scripts/` 下有三个 Windows 批处理，**双击即可**，服务以后台方式运行，关掉黑窗口也不会停：
+
+| 脚本 | 作用 |
+| --- | --- |
+| `scripts/start-web.bat` | 起前端预览（8090），自动探测后端在 8081 还是 8080，并自动打开首页 |
+| `scripts/stop-web.bat` | 停掉 8090 上的预览服务（按端口找进程 kill，不影响其它 node） |
+| `scripts/start-backend.bat` | 起后端 jar 到 8081（不依赖 IDEA，前提：MySQL、Redis 已启动） |
+
+传端口：`start-web.bat 8091`。Linux / macOS 用 `scripts/start-web.sh`（同样支持 `./scripts/start-web.sh 8091`）。
+
+> 脚本会自己判断 `deploy/html` 在不在，不在就先 `npm install && npm run build`；
+> 端口被占用会自动往后顺延（8090 占用就用 8091），日志写在项目根目录 `preview.log`。
 
 **前端开发模式（改代码热更新）**
 
@@ -161,6 +177,13 @@ npm run dev:mobile   # http://localhost:5175  手机端
 | `jianlong` | `123456` | 客户 | 吉林建龙钢铁 |
 | `yatai_sn` | `123456` | 客户 | 吉林亚泰水泥 |
 
+**客户自助注册**：商城与手机端登录页都有「手机号注册」入口。流程是
+手机号 → 短信验证码 → 企业名称 + 密码 → 注册成功直接登录（同时建好客户档案）。
+演示环境不真发短信，验证码会自动填进输入框；接入阿里云/腾讯云短信后把
+`application.yml` 里的 `xinji.sms.mock` 改成 `false` 即可，业务代码不用动。
+新注册客户默认授信额度为 0（款到发货模式），运营在后台「客户授信」里审核后放开赊购。
+注册相关接口：`/api/public/auth/sms-code`、`/api/public/auth/register`、`/api/public/auth/mobile-check`。
+
 ## 5. 目录结构
 
 ```
@@ -168,14 +191,14 @@ xinji-erp/
 ├── pom.xml                    # 根聚合 pom（IDEA 打开这一层就能导入）
 ├── web/                       # 前端工程（Vue 3 + Vite，npm workspaces 三包一体）
 │   ├── package.json           # workspaces: shared / mall / admin / mobile
-│   ├── shared/                # 三端共用：axios 封装、113 个接口、字典与格式化
+│   ├── shared/                # 三端共用：axios 封装、116 个接口、字典与格式化
 │   │   └── src/
 │   │       ├── request.js     # 统一请求：剥 {code,msg,data}、401 跳登录、按端存 token
 │   │       ├── api.js         # 全部接口封装（client 8 个 / admin 46 个…）
 │   │       └── format.js      # 状态字典、金额/吨数/日期格式化
-│   ├── mall/                  # 网页商城（7 页）：首页、详情、订单、订单详情、秒杀、我的、登录
+│   ├── mall/                  # 网页商城（8 页）：首页、详情、订单、订单详情、秒杀、我的、登录、注册
 │   ├── admin/                 # 运营后台（14 页，Element Plus）：看板、订单、物料、库存…
-│   ├── mobile/                # 手机端（6 页）：430px 手机壳 + 底部 tabbar
+│   ├── mobile/                # 手机端（7 页）：430px 手机壳 + 底部 tabbar，含注册
 │   └── scripts/build-all.mjs  # 三端一次性构建到 deploy/html
 ├── deploy/                    # 部署相关
 │   ├── nginx.conf             # 三端路径隔离 + /api 反代 + 缓存与压缩
@@ -204,6 +227,11 @@ xinji-erp/
 │           └── lua/seckill.lua# 秒杀原子脚本
 ├── prototype/                 # 早期高保真静态原型（保留做设计对照，不参与构建）
 ├── docs/                      # 部署文档、接口文档
+├── scripts/                   # 一键启动脚本（Windows .bat + Linux/Mac .sh）
+│   ├── start-web.bat          # 起前端预览 8090，自动探测后端，自动开浏览器
+│   ├── stop-web.bat           # 停预览服务
+│   ├── start-backend.bat      # 起后端 jar 到 8081（不依赖 IDEA）
+│   └── start-web.sh           # Linux / macOS 版
 └── docker-compose.yml         # 本地依赖（MySQL + Redis，可选 Memcached）
 ```
 
@@ -245,7 +273,8 @@ xinji-erp/
 | `/orders/:orderNo` | 订单详情 | 6 步状态进度条、明细结算吨数、取消订单 |
 | `/seckill` | 限时抢购 | 活动切换、进度条、抢购后轮询令牌、核销下单 |
 | `/mine` | 我的 | 授信使用率进度条、快捷入口、待核销令牌 |
-| `/login` | 登录 | 3 个演示客户一键填入 |
+| `/login` | 登录 | 3 个演示客户一键填入、手机号注册入口 |
+| `/register` | 注册 | 手机号 + 短信验证码 + 企业信息，60s 重发倒计时，演示验证码自动填入 |
 
 **运营后台 `web/admin`（14 页，Element Plus）**
 
@@ -275,7 +304,8 @@ xinji-erp/
 | `/seckill` | 抢购 | 抢购 + 令牌 |
 | `/orders` | 订单 | 展开式明细 |
 | `/mine` | 我的 | 授信 + 令牌 |
-| `/login` | 登录 | 拦非客户账号 |
+| `/login` | 登录 | 拦非客户账号、注册入口 |
+| `/register` | 注册 | 手机号 + 验证码 + 企业名称，注册即登录 |
 
 ## 7. 核心设计说明
 

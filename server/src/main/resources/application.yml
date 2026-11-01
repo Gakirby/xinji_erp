@@ -71,6 +71,10 @@ xinji:
   order:
     # 单笔订单最小起订量（吨）
     min-qty: 1
+  sms:
+    # 演示模式：不真发短信，把验证码直接回显在 /api/public/auth/sms-code 的响应里，
+    # 前端自动填入。接入阿里云/腾讯云短信后改成 false，RegisterService 里的网关调用位置已标注。
+    mock: true
 
 logging:
   level:

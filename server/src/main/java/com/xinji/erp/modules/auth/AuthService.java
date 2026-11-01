@@ -28,15 +28,31 @@ public class AuthService {
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
     public LoginResponse login(LoginRequest req) {
+        return login(req.getUsername(), req.getPassword());
+    }
+
+    /**
+     * 账号密码登录。账号名先按 username 查，查不到再按手机号查 ——
+     * 手机号注册的客户账号 username 本身就是手机号，这条兜底主要给
+     * 后台手工建的老账号用（它们 username 是 yatai 这类简写，但录了手机号）。
+     */
+    public LoginResponse login(String account, String password) {
+        String key = account == null ? "" : account.trim();
         User user = userMapper.selectOne(Wrappers.<User>lambdaQuery()
-                .eq(User::getUsername, req.getUsername()));
+                .eq(User::getUsername, key)
+                .last("limit 1"));
+        if (user == null) {
+            user = userMapper.selectOne(Wrappers.<User>lambdaQuery()
+                    .eq(User::getMobile, key)
+                    .last("limit 1"));
+        }
         if (user == null) {
             throw BizException.unauthorized("账号或密码错误");
         }
         if (user.getStatus() != null && user.getStatus() == 0) {
             throw BizException.forbidden("账号已停用，请联系管理员");
         }
-        if (!encoder.matches(req.getPassword(), user.getPassword())) {
+        if (!encoder.matches(password, user.getPassword())) {
             throw BizException.unauthorized("账号或密码错误");
         }
 

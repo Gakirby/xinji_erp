@@ -29,7 +29,8 @@ CREATE TABLE `t_customer` (
   `created_at`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_customer_no` (`customer_no`)
+  UNIQUE KEY `uk_customer_no` (`customer_no`),
+  KEY `idx_contact_phone` (`contact_phone`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='客户档案';
 
 -- ---------------------------------------------------------------------
@@ -50,6 +51,7 @@ CREATE TABLE `t_user` (
   `updated_at`    DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_username` (`username`),
+  UNIQUE KEY `uk_mobile` (`mobile`),
   KEY `idx_customer` (`customer_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='登录账号';
 

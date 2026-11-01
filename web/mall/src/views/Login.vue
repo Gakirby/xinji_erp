@@ -6,8 +6,8 @@
       <p class="muted small">吉林鑫基矿业有限公司 · 客户登录</p>
 
       <div class="field" style="margin-top: 26px">
-        <label>登录账号</label>
-        <input class="input" v-model="username" placeholder="请输入客户账号" @keyup.enter="submit" />
+        <label>登录账号 / 手机号</label>
+        <input class="input" v-model="username" placeholder="客户账号或注册手机号" @keyup.enter="submit" />
       </div>
       <div class="field">
         <label>密码</label>
@@ -19,6 +19,10 @@
       </button>
 
       <div class="err" v-if="error">{{ error }}</div>
+
+      <div class="switch">
+        还没有账号？<a @click="$router.push('/register')">手机号注册</a>
+      </div>
 
       <div class="demo">
         <span class="muted small">演示客户账号</span>
@@ -92,6 +96,9 @@ h1 { font-size: 20px; font-weight: 600; letter-spacing: .3px; }
   background: var(--redsoft); color: var(--red); font-size: 12.5px;
 }
 .demo { margin-top: 24px; padding-top: 18px; border-top: 1px dashed var(--line); }
+.switch { margin-top: 16px; font-size: 12.5px; color: var(--muted); text-align: center; }
+.switch a { color: var(--brand2); cursor: pointer; margin-left: 2px; }
+.switch a:hover { text-decoration: underline; }
 .demo-list { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 .chip {
   padding: 5px 11px; border-radius: 20px; border: 1px solid var(--line);
