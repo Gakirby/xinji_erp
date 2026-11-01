@@ -21,15 +21,21 @@
 
 ## 2. 三个端，物理分开
 
-| 端 | 页面文件 | 使用者 | 接口前缀 | 鉴权 |
-| --- | --- | --- | --- | --- |
-| 网页商城 | `prototype/mall.html` | 客户 | `/api/client/**` | 客户账号 JWT |
-| 微信小程序 | `prototype/miniapp.html` | 客户 | `/api/client/**` | 同一套 `customer_id` |
-| 运营后台 | `prototype/admin.html` | 矿区员工 | `/api/admin/**` | 员工账号 JWT + 角色 |
+三个端是**三套独立的前端工程**，共用同一个后端，靠 nginx 路径隔离：
 
-**关键点**：网页商城和小程序是同一个客户身份（绑定同一个 `customer_id`），在商城加的购物车、下的单，小程序登录后能看到；但运营后台客户端**完全访问不到** —— 不是靠前端藏菜单，而是后端 `AuthInterceptor` 直接拦掉 `/api/admin/**`，客户 token 访问返回 `403 无权限访问管理后台接口`。
+| 端 | 前端工程 | 线上路径 | 构建产物 | 使用者 | 接口前缀 |
+| --- | --- | --- | --- | --- | --- |
+| 网页商城 | `web/mall` | `/` | `deploy/html/index.html` | 客户 | `/api/client/**` |
+| 运营后台 | `web/admin` | `/admin/` | `deploy/html/admin/` | 矿区员工 | `/api/admin/**` |
+| 手机端 H5 | `web/mobile` | `/m/` | `deploy/html/m/` | 客户（手机浏览器 / 小程序 H5） | `/api/client/**` |
+
+**关键点**：网页商城和手机端是同一个客户身份（绑定同一个 `customer_id`），在商城下的单，手机端登录后能看到；但运营后台客户端**完全访问不到** —— 不是靠前端藏菜单，而是后端 `AuthInterceptor` 直接拦掉 `/api/admin/**`，客户 token 访问返回 `403 无权限访问管理后台接口`。
+
+三个端同域名共存，token 因此按端分开存（`xj_client_token` / `xj_admin_token`），避免在 `/` 登录客户账号把 `/admin/` 的员工登录态顶掉。
 
 ## 3. 技术栈
+
+**后端**
 
 - Java 8 / Spring Boot 2.7.18
 - MyBatis-Plus 3.5.3.1 / MySQL 8.0
@@ -37,6 +43,18 @@
 - Caffeine 本地缓存 + Memcached（可选）+ Redis 三级缓存
 - JWT（jjwt 0.11.5）、BCrypt 密码加密
 - springdoc-openapi（Swagger UI）
+
+**前端**
+
+- Vue 3.5 + Vite 5.4 + vue-router 4（history 模式）
+- axios 1.7（统一拦截器：剥 `{code,msg,data}`、401 跳登录）
+- Element Plus 2.9（仅运营后台，中文 locale）
+- npm workspaces：`shared` + `mall` + `admin` + `mobile` 四个包，共用接口层
+
+**部署**
+
+- Nginx 1.27（三端路径隔离 + `/api` 反代 + gzip + 长缓存）
+- Docker 多阶段构建（node 构建前端 → nginx 托管；maven 构建后端 → JRE 运行）
 
 ## 4. 5 分钟跑起来
 
@@ -76,17 +94,60 @@ java -Dfile.encoding=UTF-8 -jar server/target/xinji-erp.jar
 
 | 地址 | 是什么 |
 | --- | --- |
-| <http://localhost:8080/> | 服务入口页（导航 + 环境状态） |
+| <http://localhost:8080/> | 服务入口页（导航 + 环境状态 + 三端入口说明） |
 | <http://localhost:8080/swagger-ui.html> | 接口文档，113 个接口可直接调试 |
 | <http://localhost:8080/actuator/health> | 健康检查，MySQL/Redis 通不通看这里 |
-| `prototype/mall.html` | 网页商城原型（本地文件，双击打开） |
-| `prototype/admin.html` | 运营后台原型（本地文件，双击打开） |
 
 > **注意**：直接访问 `/api/client/products` 会返回 401，这是鉴权生效的正常表现。先在 Swagger 里调 `/api/auth/login` 拿 token，右上角 Authorize 填进去再调业务接口。
 >
 > 根路径早期版本没有页面（返回 Whitelabel 404），现在已内置入口页；如果你看到的是白页，说明跑的是旧包，重新打包或重新构建一次即可。
 
 **启动时会自动做数据自检**：如果只执行了 `schema.sql`、漏了 `data.sql`，控制台会直接告警「演示数据是空的」，而不是让你对着「账号或密码错误」猜半天。
+
+### 4.4 前端三端页面怎么跑起来
+
+后端只是 API，**页面由前端工程提供**。两种方式，任选一种：
+
+**方式 A：本地预览（不装 nginx / Docker，最快）**
+
+```bash
+cd xinji-erp/web
+npm install                 # 首次约 1 分钟
+npm run build               # 三端一次构建，产物落到 deploy/html
+
+cd ..
+node deploy/preview.mjs     # 默认 8090，代理 /api 到 8080
+```
+
+然后打开：
+
+| 地址 | 端 |
+| --- | --- |
+| <http://localhost:8090/> | 网页商城 |
+| <http://localhost:8090/admin/> | 运营后台（员工账号登录） |
+| <http://localhost:8090/m/> | 手机端（建议用浏览器 F12 切手机视图） |
+
+`preview.mjs` 是零依赖的 Node 脚本（不需要 npm install），它按 `deploy/nginx.conf` 的同一套规则做 history 路由回退和 `/api` 反向代理，用来在没装 nginx 的机器上验证路由行为。
+
+**方式 B：整站 Docker（含 nginx + MySQL + Redis）**
+
+```bash
+cd xinji-erp/deploy
+docker compose up -d --build
+```
+
+启动后 nginx 监听 `80`，直接访问 <http://localhost/> 即可（需要 Docker Desktop 已启动）。
+
+**前端开发模式（改代码热更新）**
+
+```bash
+cd xinji-erp/web
+npm run dev:mall     # http://localhost:5173  商城
+npm run dev:admin    # http://localhost:5174  后台
+npm run dev:mobile   # http://localhost:5175  手机端
+```
+
+三个 dev server 都已配好 `/api` 代理到 `http://127.0.0.1:8080`，所以**后端要先跑起来**。
 
 **默认账号**
 
@@ -105,15 +166,26 @@ java -Dfile.encoding=UTF-8 -jar server/target/xinji-erp.jar
 ```
 xinji-erp/
 ├── pom.xml                    # 根聚合 pom（IDEA 打开这一层就能导入）
-├── prototype/                 # 前端高保真原型（三端 + 架构说明，纯静态可直接打开）
-│   ├── index.html             # 原型索引：三端隔离对比、双池模型说明
-│   ├── mall.html              # 网页商城
-│   ├── miniapp.html           # 微信小程序（手机壳）
-│   ├── admin.html             # 运营后台（带登录门禁）
-│   ├── arch.html              # 技术架构与秒杀时序
-│   └── assets/ui.css          # 共用设计层
+├── web/                       # 前端工程（Vue 3 + Vite，npm workspaces 三包一体）
+│   ├── package.json           # workspaces: shared / mall / admin / mobile
+│   ├── shared/                # 三端共用：axios 封装、113 个接口、字典与格式化
+│   │   └── src/
+│   │       ├── request.js     # 统一请求：剥 {code,msg,data}、401 跳登录、按端存 token
+│   │       ├── api.js         # 全部接口封装（client 8 个 / admin 46 个…）
+│   │       └── format.js      # 状态字典、金额/吨数/日期格式化
+│   ├── mall/                  # 网页商城（7 页）：首页、详情、订单、订单详情、秒杀、我的、登录
+│   ├── admin/                 # 运营后台（14 页，Element Plus）：看板、订单、物料、库存…
+│   ├── mobile/                # 手机端（6 页）：430px 手机壳 + 底部 tabbar
+│   └── scripts/build-all.mjs  # 三端一次性构建到 deploy/html
+├── deploy/                    # 部署相关
+│   ├── nginx.conf             # 三端路径隔离 + /api 反代 + 缓存与压缩
+│   ├── Dockerfile             # node 构建三端 → nginx 托管（多阶段）
+│   ├── docker-compose.yml     # mysql + redis + server + web 整套编排
+│   ├── preview.mjs            # 零依赖本地预览（模拟 nginx 规则，无需 Docker）
+│   └── html/                  # 构建产物（npm run build 生成）
 ├── server/                    # 后端工程（模块化单体）
 │   ├── pom.xml
+│   ├── Dockerfile             # maven 构建 → JRE 运行
 │   ├── scripts/acceptance.sh  # 端到端验收脚本
 │   └── src/main/
 │       ├── java/com/xinji/erp/
@@ -130,6 +202,7 @@ xinji-erp/
 │           ├── db/schema.sql  # 21 张表
 │           ├── db/data.sql    # 演示数据
 │           └── lua/seckill.lua# 秒杀原子脚本
+├── prototype/                 # 早期高保真静态原型（保留做设计对照，不参与构建）
 ├── docs/                      # 部署文档、接口文档
 └── docker-compose.yml         # 本地依赖（MySQL + Redis，可选 Memcached）
 ```
@@ -160,6 +233,50 @@ xinji-erp/
 | 报表中心 | 经营总览、销售日报、客户/物料排行、出入库汇总、应收账龄、秒杀效果 |
 | 系统设置 | 员工账号、角色、客户账号绑定、重置密码、停用 |
 
+## 6.2 前端页面清单（27 页）
+
+**网页商城 `web/mall`（7 页）**
+
+| 路由 | 页面 | 要点 |
+| --- | --- | --- |
+| `/` | 首页 | 秒杀横幅 + 倒计时、6 个物料卡（双池库存）、采购车侧栏、结算弹窗 |
+| `/products/:id` | 物料详情 | 双池四行拆解、加减吨数校验（不能超可售、不能低于起订） |
+| `/orders` | 我的订单 | 7 个状态 tab、分页 |
+| `/orders/:orderNo` | 订单详情 | 6 步状态进度条、明细结算吨数、取消订单 |
+| `/seckill` | 限时抢购 | 活动切换、进度条、抢购后轮询令牌、核销下单 |
+| `/mine` | 我的 | 授信使用率进度条、快捷入口、待核销令牌 |
+| `/login` | 登录 | 3 个演示客户一键填入 |
+
+**运营后台 `web/admin`（14 页，Element Plus）**
+
+| 路由 | 页面 | 要点 |
+| --- | --- | --- |
+| `/` | 经营看板 | 4 个 KPI、订单状态分布、今日待办、库存预警、最近订单 |
+| `/orders` | 订单管理 | 多条件筛选、详情抽屉、审核/派车/出厂/签收/取消、派车弹窗 |
+| `/products` | 物料档案 | 物料增改、料仓维护、期初入库 |
+| `/stock` | 库存管理 | 三 tab（台账/流水/汇总）+ 划拨/回拨/入库 |
+| `/purchase` | 采购管理 | 建单、到货入库、详情 |
+| `/dispatch` | 调度过磅 | 四 tab（派车单/车辆/司机/看板）、保险到期高亮 |
+| `/weigh` | 磅房过磅 | 毛重皮重实时算净重、扣水扣杂、结算金额、磅单列表 |
+| `/production` | 生产管理 | 工单、成品率、三列看板、完工报产 |
+| `/customers` | 客户与授信 | 授信使用率进度条、调整授信 |
+| `/finance` | 财务结算 | 四 tab（对账/应收/收款/发票）+ 收款明细弹窗 |
+| `/seckill` | 秒杀活动 | 活动 CRUD、发布/预热/开始/结束回拨、SKU 配置、令牌监控 |
+| `/reports` | 报表中心 | 8 个报表 tab，动态列自适应 |
+| `/users` | 系统设置 | 账号 CRUD、重置密码、`admin` 停用保护 |
+| `/login` | 登录 | 拦非员工账号、4 个演示账号一键填入 |
+
+**手机端 `web/mobile`（6 页）**
+
+| 路由 | 页面 | 要点 |
+| --- | --- | --- |
+| `/` | 选料 | 分类横向滚动、物料列表、秒杀倒计时横幅 |
+| `/products/:id` | 详情 | 底部 sheet 下单 |
+| `/seckill` | 抢购 | 抢购 + 令牌 |
+| `/orders` | 订单 | 展开式明细 |
+| `/mine` | 我的 | 授信 + 令牌 |
+| `/login` | 登录 | 拦非客户账号 |
+
 ## 7. 核心设计说明
 
 ### 库存双池
@@ -188,3 +305,22 @@ physical(物理总库存) = stock_qty(销售可售) + activity_alloc_qty(活动�
 ```
 
 三重幂等：Redisson 用户锁 → `(user_id, seckill_sku_id)` 唯一索引 → 条件扣减 `activity_stock - sold_qty >= qty`。
+
+### 订单状态机与结算吨数
+
+```
+PENDING_AUDIT → AUDITED → DISPATCHED → SHIPPED → SIGNED → SETTLED → INVOICED → PAID
+                    ↓          ↓          ↓         ↓
+                 CANCELLED（任意未出厂状态可取消，释放冻结库存与授信占用）
+```
+
+结算吨数分两条来源：
+
+- **过了磅**：`t_weigh_ticket` 记毛重、皮重、扣水扣杂，算净重后回填 `t_order_item.settle_qty` 与 `settle_amount`，按实际重量结算；
+- **没过磅直接签收**：签收时若 `settle_qty` 为空或 0，自动回落为订单吨数，避免「签收单结算吨数是 0」这种脏数据流进对账和报表。
+
+### 三端登录态隔离
+
+三个前端同域名共存，`localStorage` 是共享的，所以 token 分 key 存：
+`xj_client_token`（商城 / 手机端共用同一客户身份）、`xj_admin_token`（后台）。
+只分 key 还不够 —— 应用启动时会用 `/auth/me` 回填用户资料，避免「token 还在、用户信息丢了」导致界面显示未登录却又能调通接口。

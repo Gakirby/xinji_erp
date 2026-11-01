@@ -78,9 +78,22 @@
 
   <div class="note">
     <b>这是后端 API 服务，不是前端站点。</b>
-    根路径没有网页是正常的 —— 商城页、小程序页、运营后台是三个独立的静态原型，
-    在项目根目录 <b>prototype/</b> 下，双击 <b>mall.html</b> / <b>miniapp.html</b> / <b>admin.html</b> 用浏览器直接打开即可。
+    三个前端工程在 <b>web/</b> 下（mall 商城 / admin 运营后台 / mobile 手机端），
+    构建产物由 <b>nginx</b> 托管在同一个域名的三个路径上：<code>/</code>、<code>/admin/</code>、<code>/m/</code>。
+    想看页面，用 <code>deploy/preview.mjs</code>（本地零依赖预览）或 <code>deploy/docker-compose.yml</code> 整套拉起。
   </div>
+
+  <h3>三端页面入口</h3>
+  <table>
+    <thead>
+      <tr><th>端</th><th>nginx 路径</th><th>本地预览地址</th><th>说明</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>网页商城</td><td><code>/</code></td><td><code>http://localhost:8090/</code></td><td>客户选料、下单、抢购</td></tr>
+      <tr><td>运营后台</td><td><code>/admin/</code></td><td><code>http://localhost:8090/admin/</code></td><td>14 个管理页，员工账号登录</td></tr>
+      <tr><td>手机端</td><td><code>/m/</code></td><td><code>http://localhost:8090/m/</code></td><td>430px 手机壳，底部 tabbar</td></tr>
+    </tbody>
+  </table>
 
   <div class="grid">
     <a class="card" href="/swagger-ui.html" target="_blank">

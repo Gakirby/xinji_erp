@@ -276,6 +276,21 @@ public class OrderService {
             // 冻结量变了，商品缓存必须失效，否则客户端还看到旧的冻结数
             evictAfterCommit(touched);
         }
+
+        // 签收：没有过磅单的明细按订单吨数兜底结算，否则结算吨数会留 0 进报表与对账
+        if (target == OrderStatus.SIGNED) {
+            List<OrderItem> items = orderItemMapper.selectList(Wrappers.<OrderItem>lambdaQuery()
+                    .eq(OrderItem::getOrderId, order.getId()));
+            for (OrderItem it : items) {
+                if (it.getSettleQty() == null || it.getSettleQty().compareTo(BigDecimal.ZERO) <= 0) {
+                    it.setSettleQty(it.getQty());
+                    it.setSettleAmount(it.getAmount());
+                    orderItemMapper.updateById(it);
+                    log.info("签收兜底结算: {} 物料 {} 未过磅，按订单吨数 {} 结算",
+                            orderNo, it.getSkuName(), it.getQty().stripTrailingZeros().toPlainString());
+                }
+            }
+        }
         log.info("订单流转: {} {} -> {}", orderNo, OrderStatus.labelOf(from), target.getLabel());
     }
 

@@ -1,0 +1,62 @@
+:root {
+  --el-color-primary: #1b4f6c;
+  --el-color-success: #0f8a5f;
+  --el-color-warning: #c98a0a;
+  --el-color-danger: #c0392b;
+  --el-border-radius-base: 7px;
+  --el-font-size-base: 13px;
+}
+
+* { box-sizing: border-box; }
+html, body, #app { margin: 0; padding: 0; height: 100%; }
+body {
+  font: 13px/1.6 "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", -apple-system, Segoe UI, sans-serif;
+  color: #141a20; background: #f4f6f8; -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, h4, p { margin: 0; }
+a { text-decoration: none; color: inherit; }
+button { font: inherit; cursor: pointer; }
+
+.page-card {
+  background: #fff; border: 1px solid var(--el-border-color-lighter);
+  border-radius: 10px; padding: 18px;
+}
+.page-card + .page-card { margin-top: 14px; }
+
+.bar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px;
+}
+.bar .spacer { flex: 1; }
+
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.kpi {
+  background: #fff; border: 1px solid var(--el-border-color-lighter); border-radius: 10px;
+  padding: 16px 18px;
+}
+.kpi .k { font-size: 12px; color: var(--el-text-color-secondary); }
+.kpi .v { font-size: 26px; font-weight: 600; margin-top: 6px; font-variant-numeric: tabular-nums; letter-spacing: -.2px; }
+.kpi .u { font-size: 12px; color: var(--el-text-color-secondary); margin-left: 3px; font-weight: 400; }
+.kpi .s { font-size: 11.5px; color: var(--el-text-color-secondary); margin-top: 4px; }
+
+.mono { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12.5px; }
+.num { font-variant-numeric: tabular-nums; }
+.money { font-variant-numeric: tabular-nums; font-weight: 600; }
+.muted { color: var(--el-text-color-secondary); }
+.small { font-size: 12px; }
+
+.el-table th.el-table__cell { background: #fafbfc; font-weight: 500; font-size: 12px; }
+.el-table .cell { line-height: 1.5; }
+
+.section-title {
+  font-size: 13px; font-weight: 600; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.section-title::before {
+  content: ''; width: 3px; height: 13px; background: var(--el-color-primary); border-radius: 2px;
+}
+
+.empty-hint { padding: 40px; text-align: center; color: var(--el-text-color-secondary); font-size: 13px; }
+
+@media (max-width: 1200px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+}

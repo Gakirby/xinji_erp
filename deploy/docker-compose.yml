@@ -1,0 +1,102 @@
+# =====================================================================
+#  鑫基矿业 ERP · 一键部署（MySQL + Redis + 后端 + Nginx 三端）
+#
+#  用法（在 deploy 目录）：
+#    docker compose up -d --build        启动全部
+#    docker compose logs -f server       看后端日志
+#    docker compose down                 停止（加 -v 会清空数据库）
+#
+#  访问：
+#    http://localhost/          网页商城
+#    http://localhost/admin/    运营后台
+#    http://localhost/m/        手机端
+#    http://localhost/api/...   后端接口
+# =====================================================================
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: xinji-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: "1234"
+      MYSQL_DATABASE: "xinji_erp"
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_general_ci
+      - --default-time-zone=+08:00
+    volumes:
+      - xinji-mysql-data:/var/lib/mysql
+      # 首次启动自动建表并灌入演示数据；MySQL 按文件名顺序执行，01 必须先于 02
+      - ../server/src/main/resources/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ../server/src/main/resources/db/data.sql:/docker-entrypoint-initdb.d/02-data.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p1234"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  redis:
+    image: redis:6.2
+    container_name: xinji-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - xinji-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  server:
+    build:
+      context: ../server
+      dockerfile: Dockerfile
+    image: xinji-erp-server:1.0.0
+    container_name: xinji-server
+    restart: unless-stopped
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_PORT: "3306"
+      MYSQL_USER: root
+      MYSQL_PASSWORD: "1234"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_DB: "5"
+      TZ: Asia/Shanghai
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/actuator/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      start_period: 60s
+      retries: 5
+
+  web:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: xinji-erp-web:1.0.0
+    container_name: xinji-web
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - server
+
+  # 可选：第三级缓存，启用后把 application.yml 的 xinji.cache.memcached-enabled 改成 true
+  memcached:
+    image: memcached:1.6-alpine
+    container_name: xinji-memcached
+    restart: unless-stopped
+    profiles: ["cache"]
+
+volumes:
+  xinji-mysql-data:
+  xinji-redis-data:

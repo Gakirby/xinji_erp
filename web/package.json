@@ -1,0 +1,25 @@
+{
+  "name": "xinji-erp-web",
+  "private": true,
+  "version": "1.0.0",
+  "description": "吉林鑫基矿业 · 矿石配送 ERP 前端（三端分离）",
+  "workspaces": [
+    "shared",
+    "mall",
+    "admin",
+    "mobile"
+  ],
+  "scripts": {
+    "dev:mall": "npm run dev --workspace=mall",
+    "dev:admin": "npm run dev --workspace=admin",
+    "dev:mobile": "npm run dev --workspace=mobile",
+    "build": "node scripts/build-all.mjs",
+    "preview:mall": "npm run preview --workspace=mall",
+    "preview:admin": "npm run preview --workspace=admin",
+    "preview:mobile": "npm run preview --workspace=mobile"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "vite": "^5.4.11"
+  }
+}
