@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>鑫基矿业 · 运营管理后台</title>
+<link rel="stylesheet" href="assets/ui.css">
+<style>
+
+.gate[hidden]{display:none}
+#shell{display:none}
+#shell.on{display:block}
+.topbar .who[hidden]{display:none}
+.topbar .who[hidden]{display:none}
+.topbar .who{display:flex;align-items:center;gap:9px;font-size:11.5px;color:#cddae2;margin-right:14px}
+.topbar .who .av{width:26px;height:26px;border-radius:50%;background:#1d4a63;color:#fff;display:flex;
+  align-items:center;justify-content:center;font-size:11px}
+.topbar .who .role{background:rgba(255,255,255,.1);padding:2px 7px;border-radius:4px;font-size:10px;color:#9fb4c2}
+.topbar .out{font-size:11px;color:#8ea4b2;border:1px solid rgba(255,255,255,.18);
+  padding:5px 11px;border-radius:6px;cursor:pointer}
+.topbar .out:hover{color:#fff;border-color:rgba(255,255,255,.4)}
+.env{font-size:10px;color:#f0b429;border:1px solid rgba(240,180,41,.4);background:rgba(240,180,41,.1);
+  padding:3px 8px;border-radius:5px;margin-right:12px}
+
+
+.pool-bar{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid var(--line);
+  border-radius:10px;padding:13px 16px;margin-top:14px}
+.pool-bar .pb-i{min-width:132px}
+.pool-bar .pb-i small{display:block;font-size:10px;color:var(--muted);letter-spacing:.2px}
+.pool-bar .pb-i b{display:block;font-size:16px;margin:2px 0 1px;font-variant-numeric:tabular-nums}
+.pool-bar .pb-i span{font-size:9.5px;color:#93a0a8}
+.pool-bar .pb-i.act b{color:#b5590f}
+.pool-bar .pb-arrow{color:#a8b4bb;font-size:10px;text-align:center;flex:none}
+.pool-bar .pb-arrow i{display:block;font-style:normal;font-size:9px;margin-bottom:2px}
+.pool-bar .pb-note{flex:1;border-left:1px dashed var(--line2);padding-left:14px;margin-left:4px}
+.pool-bar .pb-note b{font-size:11.5px;display:block;margin-bottom:3px}
+.pool-bar .pb-note p{font-size:10.5px;color:var(--muted);line-height:1.65}
+.pool-bar .pb-note code{background:#f2f5f6;padding:1px 4px;border-radius:3px;font-size:9.5px}
+</style>
+
+</head>
+<body>
+<div class="topbar">
+  <div class="brand">
+    <div class="logo">鑫</div>
+    <div>
+      <div class="brand-t">鑫基矿业 · 运营管理后台</div>
+      <div class="brand-s">XINJI MINING · ERP CONSOLE</div>
+    </div>
+  </div>
+  <div class="spacer"></div>
+  <div class="env">内部系统 · 仅限授权员工</div>
+  <div class="who" id="who" hidden>
+    <div class="av">李</div>
+    <div>李国强<span class="role">运营主管 ADMIN</span></div>
+  </div>
+  <div class="out" id="logout" hidden>退出</div>
+</div><div class="gate" id="gate">
+  <div class="gate-card">
+    <div class="glogo">鑫</div>
+    <h1>运营管理后台登录</h1>
+    <div class="sub">吉林鑫基矿业有限公司 · 内部管理系统<br>账号由系统管理员开通，仅限在职员工使用</div>
+    <label>员工账号 / 手机号</label>
+    <input value="liguoqiang" spellcheck="false">
+    <label>登录密码</label>
+    <input type="password" value="Xinji@2026">
+    <div class="row2">
+      <div>
+        <label>图形验证码</label>
+        <input value="8KM2" spellcheck="false">
+      </div>
+      <div>
+        <label>动态口令（可选）</label>
+        <input value="••••••" spellcheck="false">
+      </div>
+    </div>
+    <div class="gate-err" id="gateErr">账号或密码错误，请重试</div>
+    <button class="btn-main" id="login">登 录</button>
+    <div class="gate-note">
+      权限校验在后端完成：本页仅作登录入口，所有 <code>/api/admin/**</code> 请求由网关校验
+      <code>ADMIN</code> 角色与数据权限范围，前端路由不作为安全边界。
+    </div>
+  </div>
+</div><main id="shell">
+  <div class="shell">
+    <div class="side">
+      <div class="org">
+        <div class="av">鑫</div>
+        <div><b>鑫基矿业</b><small>吉林 · 龙潭矿区</small></div>
+      </div>
+
+      <div class="nav-g">经营</div>
+      <nav id="anav">
+        <a class="on" data-p="a-dash"><span class="ni"></span>工作台</a>
+        <a data-p="a-order"><span class="ni"></span>订单中心<span class="cnt">12</span></a>
+        <a data-p="a-stock"><span class="ni"></span>仓储管理</a>
+        <a data-p="a-buy"><span class="ni"></span>采购管理<span class="cnt">3</span></a>
+        <a data-p="a-dispatch"><span class="ni"></span>调度过磅</a>
+        <a data-p="a-fin"><span class="ni"></span>财务结算<span class="cnt">5</span></a>
+
+        <div class="nav-g" style="padding-left:20px;margin-top:6px">营销</div>
+        <a data-p="a-seckill"><span class="ni"></span>秒杀活动</a>
+        <a data-p="a-seckillorder"><span class="ni"></span>抢购订单</a>
+        <a data-p="a-seckillmon"><span class="ni"></span>活动监控<span class="cnt">6</span></a>
+
+        <div class="nav-g" style="padding-left:20px;margin-top:6px">生产与报表</div>
+        <a data-p="a-prod"><span class="ni"></span>生产管理</a>
+        <a data-p="a-report"><span class="ni"></span>报表中心</a>
+
+        <div class="nav-g" style="padding-left:20px;margin-top:6px">基础</div>
+        <a data-p="a-fin"><span class="ni"></span>客户与授信</a>
+        <a data-p="a-stock"><span class="ni"></span>物料档案</a>
+        <a data-p="a-dispatch"><span class="ni"></span>车辆与司机</a>
+        <a data-p="a-setting"><span class="ni"></span>系统设置</a>
+      </nav>
+
+      <div class="sfoot">
+        <div class="role"><b>李国强</b>运营主管 · 全公司数据</div>
+      </div>
+    </div>
+
+    <div class="main" id="amain">
+
+      <!-- 工作台 -->
+      <div class="ap on" id="a-dash">
+        <div class="main-head">
+          <div>
+            <h2>工作台</h2>
+            <div class="sub">2026-11-01 周日 · 数据截至 16:40</div>
+          </div>
+          <div class="hbtns">
+            <button class="btn">导出日报</button>
+            <button class="btn pri">+ 代客下单</button>
+          </div>
+        </div>
+
+        <div class="kpis">
+          <div class="kpi">
+            <div class="kt">今日下单</div>
+            <div class="kv2">18<small>单</small></div>
+            <div class="kd"><em class="up">↑ 12.5%</em> 环比昨日</div>
+            <svg class="spark" viewBox="0 0 76 34"><path d="M2 26 L14 22 L26 25 L38 16 L50 18 L62 10 L74 12" fill="none" stroke="#2c7499" stroke-width="1.6"/></svg>
+          </div>
+          <div class="kpi">
+            <div class="kt">待发货吨数</div>
+            <div class="kv2">1,240<small>吨</small></div>
+            <div class="kd"><em style="color:var(--amber)">7 单</em> 待派车</div>
+            <svg class="spark" viewBox="0 0 76 34"><path d="M2 20 L14 24 L26 18 L38 22 L50 14 L62 19 L74 8" fill="none" stroke="#bd7415" stroke-width="1.6"/></svg>
+          </div>
+          <div class="kpi">
+            <div class="kt">库存总量</div>
+            <div class="kv2">6,200<small>吨</small></div>
+            <div class="kd"><em class="dn">↓ 4.1%</em> 较上周</div>
+            <svg class="spark" viewBox="0 0 76 34"><path d="M2 12 L14 15 L26 13 L38 19 L50 22 L62 20 L74 26" fill="none" stroke="#5b6b78" stroke-width="1.6"/></svg>
+          </div>
+          <div class="kpi">
+            <div class="kt">应收未收</div>
+            <div class="kv2">386,400<small>元</small></div>
+            <div class="kd"><em class="dn">2 家</em> 账龄超 60 天</div>
+            <svg class="spark" viewBox="0 0 76 34"><path d="M2 24 L14 20 L26 21 L38 15 L50 17 L62 12 L74 9" fill="none" stroke="#c0392b" stroke-width="1.6"/></svg>
+          </div>
+          <div class="kpi">
+            <div class="kt">本月回款</div>
+            <div class="kv2">128,000<small>元</small></div>
+            <div class="kd"><em class="up">↑ 8.2%</em> 完成率 64%</div>
+            <svg class="spark" viewBox="0 0 76 34"><path d="M2 28 L14 25 L26 20 L38 21 L50 15 L62 13 L74 7" fill="none" stroke="#0f8a5f" stroke-width="1.6"/></svg>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-h">
+              <h3>近 7 日下单吨数</h3>
+              <span class="more">单位：吨</span>
+            </div>
+            <div class="card-b">
+              <div class="chart">
+                <div class="ch-col"><div class="ch-bar" style="height:52%"><span>820</span></div><div class="ch-lb">10-26</div></div>
+                <div class="ch-col"><div class="ch-bar" style="height:61%"><span>960</span></div><div class="ch-lb">10-27</div></div>
+                <div class="ch-col"><div class="ch-bar" style="height:73%"><span>1,140</span></div><div class="ch-lb">10-28</div></div>
+                <div class="ch-col"><div class="ch-bar" style="height:56%"><span>880</span></div><div class="ch-lb">10-29</div></div>
+                <div class="ch-col"><div class="ch-bar" style="height:84%"><span>1,320</span></div><div class="ch-lb">10-30</div></div>
+                <div class="ch-col"><div class="ch-bar" style="height:95%"><span>1,480</span></div><div class="ch-lb">10-31</div></div>
+                <div class="ch-col"><div class="ch-bar" style="height:79%"><span>1,240</span></div><div class="ch-lb">11-01</div></div>
+              </div>
+              <div class="chart-legend">
+                <span><i style="background:#1b4f6c"></i>石灰石</span>
+                <span><i style="background:#bd7415"></i>机制砂</span>
+                <span><i style="background:#6b7684"></i>铁精粉</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-h"><h3>今日待办</h3><span class="more">共 11 项</span></div>
+            <div class="card-b" style="padding-top:4px;padding-bottom:6px">
+              <div class="todo"><div class="td-dot r"></div><div class="td-b"><b>3 笔订单</b>超出客户信用额度，需审批</div><span class="td-t">09:40</span><span class="td-act">处理</span></div>
+              <div class="todo"><div class="td-dot"></div><div class="td-b"><b>机制砂</b>库存 620 吨低于安全线 800 吨</div><span class="td-t">10:15</span><span class="td-act">补货</span></div>
+              <div class="todo"><div class="td-dot"></div><div class="td-b"><b>2 张磅单</b>缺皮重数据，待补录</div><span class="td-t">11:38</span><span class="td-act">补录</span></div>
+              <div class="todo"><div class="td-dot g"></div><div class="td-b"><b>5 笔对账单</b>已到客户确认期，待催办</div><span class="td-t">14:02</span><span class="td-act">催办</span></div>
+              <div class="todo"><div class="td-dot"></div><div class="td-b"><b>吉B·8K275</b>车辆保险 3 天后到期</div><span class="td-t">15:30</span><span class="td-act">查看</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2b">
+          <div class="card">
+            <div class="card-h"><h3>库存预警</h3><span class="more">按料仓总库存升序 · 可售量另见仓储页</span></div>
+            <div style="padding:0">
+              <table class="data">
+                <thead><tr><th>料仓</th><th>物料</th><th class="num-r">总库存</th><th class="num-r">安全库存</th><th>状态</th></tr></thead>
+                <tbody>
+                  <tr><td><b>B1</b></td><td>机制砂 · 中砂</td><td class="num-r mono">620 吨</td><td class="num-r mono">800</td><td><span class="pill a">偏低</span></td></tr>
+                  <tr><td><b>B2</b></td><td>铁精粉 65%</td><td class="num-r mono">480 吨</td><td class="num-r mono">400</td><td><span class="pill g">正常</span></td></tr>
+                  <tr><td><b>A1</b></td><td>石灰石 5-10mm</td><td class="num-r mono">3,240 吨</td><td class="num-r mono">1,500</td><td><span class="pill g">充足</span></td></tr>
+                  <tr><td><b>A2</b></td><td>石灰石 10-20mm</td><td class="num-r mono">1,860 吨</td><td class="num-r mono">1,500</td><td><span class="pill g">正常</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-h"><h3>订单状态分布</h3><span class="more">今日</span></div>
+            <div class="card-b">
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+                <div style="background:#fafbfc;border:1px solid var(--line2);border-radius:8px;padding:10px 12px">
+                  <div style="font-size:10.5px;color:var(--muted)">待审核</div>
+                  <div style="font-size:18px;font-weight:700;margin-top:2px">3</div>
+                </div>
+                <div style="background:#fafbfc;border:1px solid var(--line2);border-radius:8px;padding:10px 12px">
+                  <div style="font-size:10.5px;color:var(--muted)">待派车</div>
+                  <div style="font-size:18px;font-weight:700;margin-top:2px;color:var(--amber)">7</div>
+                </div>
+                <div style="background:#fafbfc;border:1px solid var(--line2);border-radius:8px;padding:10px 12px">
+                  <div style="font-size:10.5px;color:var(--muted)">运输中</div>
+                  <div style="font-size:18px;font-weight:700;margin-top:2px;color:var(--brand2)">7</div>
+                </div>
+                <div style="background:#fafbfc;border:1px solid var(--line2);border-radius:8px;padding:10px 12px">
+                  <div style="font-size:10.5px;color:var(--muted)">已签收</div>
+                  <div style="font-size:18px;font-weight:700;margin-top:2px;color:var(--green)">12</div>
+                </div>
+                <div style="background:#fafbfc;border:1px solid var(--line2);border-radius:8px;padding:10px 12px">
+                  <div style="font-size:10.5px;color:var(--muted)">已对账</div>
+                  <div style="font-size:18px;font-weight:700;margin-top:2px">5</div>
+                </div>
+                <div style="background:#fafbfc;border:1px solid var(--line2);border-radius:8px;padding:10px 12px">
+                  <div style="font-size:10.5px;color:var(--muted)">异常</div>
+                  <div style="font-size:18px;font-weight:700;margin-top:2px;color:var(--red)">1</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2" style="margin-top:14px;margin-bottom:0">
+          <div class="card">
+            <div class="card-h"><h3>客户发货排行</h3><span class="more">本月 · 按结算吨数</span></div>
+            <div class="card-b" style="padding-top:10px">
+              <div style="display:flex;align-items:center;gap:11px;padding:8px 0">
+                <span style="width:16px;font-size:11px;color:var(--muted);font-weight:600">1</span>
+                <span style="width:112px;font-size:12.5px;font-weight:600">吉林建龙钢铁</span>
+                <div class="bar" style="flex:1"><u style="width:100%"></u></div>
+                <span style="width:78px;text-align:right;font-size:11.5px;font-variant-numeric:tabular-nums;font-weight:600">3,860 吨</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:11px;padding:8px 0">
+                <span style="width:16px;font-size:11px;color:var(--muted);font-weight:600">2</span>
+                <span style="width:112px;font-size:12.5px;font-weight:600">吉林亚泰水泥</span>
+                <div class="bar" style="flex:1"><u style="width:55%;background:linear-gradient(90deg,#4b93b5,#1b4f6c)"></u></div>
+                <span style="width:78px;text-align:right;font-size:11.5px;font-variant-numeric:tabular-nums;font-weight:600">2,140 吨</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:11px;padding:8px 0">
+                <span style="width:16px;font-size:11px;color:var(--muted);font-weight:600">3</span>
+                <span style="width:112px;font-size:12.5px;font-weight:600">长春亚泰建材</span>
+                <div class="bar" style="flex:1"><u style="width:33%;background:linear-gradient(90deg,#4b93b5,#1b4f6c)"></u></div>
+                <span style="width:78px;text-align:right;font-size:11.5px;font-variant-numeric:tabular-nums;font-weight:600">1,286 吨</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:11px;padding:8px 0">
+                <span style="width:16px;font-size:11px;color:var(--muted);font-weight:600">4</span>
+                <span style="width:112px;font-size:12.5px;font-weight:600">长春市政路桥</span>
+                <div class="bar" style="flex:1"><u style="width:24%;background:linear-gradient(90deg,#4b93b5,#1b4f6c)"></u></div>
+                <span style="width:78px;text-align:right;font-size:11.5px;font-variant-numeric:tabular-nums;font-weight:600">940 吨</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:11px;padding:8px 0">
+                <span style="width:16px;font-size:11px;color:var(--muted);font-weight:600">5</span>
+                <span style="width:112px;font-size:12.5px;font-weight:600">四平金越建材</span>
+                <div class="bar" style="flex:1"><u style="width:12%;background:linear-gradient(90deg,#4b93b5,#1b4f6c)"></u></div>
+                <span style="width:78px;text-align:right;font-size:11.5px;font-variant-numeric:tabular-nums;font-weight:600">486 吨</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-h"><h3>最新动态</h3><span class="more">实时</span></div>
+            <div class="card-b" style="padding-top:10px">
+              <div class="todo" style="padding-top:6px"><div class="td-dot g"></div><div class="td-b"><b>XJ20261101008</b> 已过磅出厂 · 净重 33.66 吨</div><span class="td-t">11:38</span></div>
+              <div class="todo"><div class="td-dot g"></div><div class="td-b"><b>CG20261101-03</b> 采购到货 312.40 吨，已入 A1 料仓</div><span class="td-t">10:52</span></div>
+              <div class="todo"><div class="td-dot"></div><div class="td-b"><b>XJ20261101006</b> 超出信用额度，转入审批</div><span class="td-t">08:20</span></div>
+              <div class="todo"><div class="td-dot"></div><div class="td-b"><b>DZ-202610-02</b> 客户已确认，待开票 ¥653,600</div><span class="td-t">昨天</span></div>
+              <div class="todo"><div class="td-dot r"></div><div class="td-b"><b>B1 料仓</b> 机制砂低于安全库存，已触发补货提醒</div><span class="td-t">昨天</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 订单中心 -->
+      <div class="ap" id="a-order">
+        <div class="main-head">
+          <div>
+            <h2>订单中心</h2>
+            <div class="sub">销售订单全生命周期 · 与库存、调度、财务同一份数据</div>
+          </div>
+          <div class="hbtns">
+            <button class="btn">批量导出</button>
+            <button class="btn pri">+ 代客下单</button>
+          </div>
+        </div>
+
+        <div class="card" style="padding:0;overflow:hidden">
+          <div class="tabline">
+            <button class="on">全部<span class="num">18</span></button>
+            <button>待审核<span class="num">3</span></button>
+            <button>待派车<span class="num">7</span></button>
+            <button>运输中<span class="num">7</span></button>
+            <button>已签收<span class="num">12</span></button>
+            <button>已对账<span class="num">5</span></button>
+            <button>异常<span class="num">1</span></button>
+          </div>
+          <div class="tb-toolbar">
+            <input class="srch" placeholder="订单号 / 客户 / 车牌">
+            <select class="sel"><option>全部客户</option><option>长春亚泰建材</option><option>吉林建龙钢铁</option></select>
+            <select class="sel"><option>全部物料</option><option>石灰石 5-10mm</option><option>机制砂</option></select>
+            <select class="sel"><option>提货方式</option><option>配送</option><option>自提</option></select>
+            <span style="font-size:11.5px;color:var(--muted);padding-left:4px">2026-11-01</span>
+            <div class="spacer"></div>
+            <button class="btn">筛选</button>
+          </div>
+          <table class="data">
+            <thead>
+              <tr>
+                <th style="width:34px"><input type="checkbox"></th>
+                <th>订单号</th><th>客户</th><th>物料</th>
+                <th class="num-r">下单量</th><th class="num-r">实发净重</th>
+                <th>提货</th><th class="num-r">金额</th><th>状态</th><th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><input type="checkbox"></td>
+                <td><b class="link">XJ20261101008</b><div style="font-size:10px;color:var(--muted)">11-01 09:12</div></td>
+                <td><b>长春亚泰建材</b><div style="font-size:10px;color:var(--muted)">二道区 2 号料场</div></td>
+                <td>石灰石 5-10mm</td>
+                <td class="num-r mono">96 吨</td>
+                <td class="num-r mono">33.49 吨</td>
+                <td>配送</td>
+                <td class="num-r mono">¥8,056.00</td>
+                <td><span class="pill b">运输中</span></td>
+                <td><span class="link">详情</span></td>
+              </tr>
+              <tr>
+                <td><input type="checkbox"></td>
+                <td><b class="link">XJ20261101007</b><div style="font-size:10px;color:var(--muted)">11-01 08:47</div></td>
+                <td><b>吉林建龙钢铁</b><div style="font-size:10px;color:var(--muted)">龙潭区 · 自提</div></td>
+                <td>铁精粉 65%</td>
+                <td class="num-r mono">200 吨</td>
+                <td class="num-r mono">—</td>
+                <td>自提</td>
+                <td class="num-r mono">¥152,000.00</td>
+                <td><span class="pill a">待派车</span></td>
+                <td><span class="link">派车</span></td>
+              </tr>
+              <tr>
+                <td><input type="checkbox"></td>
+                <td><b class="link">XJ20261101006</b><div style="font-size:10px;color:var(--muted)">11-01 08:20</div></td>
+                <td><b>吉林恒泰商砼</b><div style="font-size:10px;color:var(--muted)">船营区 · 3 号站</div></td>
+                <td>机制砂 · 中砂</td>
+                <td class="num-r mono">60 吨</td>
+                <td class="num-r mono">—</td>
+                <td>配送</td>
+                <td class="num-r mono">¥5,700.00</td>
+                <td><span class="pill r">超额度待审</span></td>
+                <td><span class="link">审批</span></td>
+              </tr>
+              <tr>
+                <td><input type="checkbox"></td>
+                <td><b class="link">XJ20261101005</b><div style="font-size:10px;color:var(--muted)">11-01 07:55</div></td>
+                <td><b>长春市政路桥</b><div style="font-size:10px;color:var(--muted)">宽城区 · 项目部</div></td>
+                <td>石灰石 10-20mm</td>
+                <td class="num-r mono">400 吨</td>
+                <td class="num-r mono">—</td>
+                <td>配送</td>
+                <td class="num-r mono">¥32,800.00</td>
+                <td><span class="pill a">待派车</span></td>
+                <td><span class="link">派车</span></td>
+              </tr>
+              <tr>
+                <td><input type="checkbox"></td>
+                <td><b class="link">XJ20261031012</b><div style="font-size:10px;color:var(--muted)">10-31 16:30</div></td>
+                <td><b>吉林亚泰水泥</b><div style="font-size:10px;color:var(--muted)">永吉县 · 熟料线</div></td>
+                <td>石灰石 5-10mm</td>
+                <td class="num-r mono">600 吨</td>
+                <td class="num-r mono">598.42 吨</td>
+                <td>配送</td>
+                <td class="num-r mono">¥51,468.00</td>
+                <td><span class="pill g">已签收</span></td>
+                <td><span class="link">对账</span></td>
+              </tr>
+              <tr>
+                <td><input type="checkbox"></td>
+                <td><b class="link">XJ20261031009</b><div style="font-size:10px;color:var(--muted)">10-31 11:08</div></td>
+                <td><b>四平金越建材</b><div style="font-size:10px;color:var(--muted)">铁西区 · 搅拌站</div></td>
+                <td>机制砂 · 中砂</td>
+                <td class="num-r mono">120 吨</td>
+                <td class="num-r mono">118.60 吨</td>
+                <td>配送</td>
+                <td class="num-r mono">¥11,267.00</td>
+                <td><span class="pill n">已对账</span></td>
+                <td><span class="link">开票</span></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="pager">
+            <span>共 18 条 · 已选 0 条</span>
+            <div class="pgs"><span>‹</span><span class="on">1</span><span>2</span><span>3</span><span>›</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 仓储 -->
+      <div class="ap" id="a-stock">
+        <div class="main-head">
+          <div>
+            <h2>仓储管理</h2>
+            <div class="sub">料仓实时库存 · 出入库流水 · 盘点差异</div>
+          </div>
+          <div class="hbtns">
+            <button class="btn">入库单</button>
+            <button class="btn">出库单</button>
+            <button class="btn pri">发起盘点</button>
+          </div>
+        </div>
+
+        <div class="silos">
+          <div class="silo">
+            <div class="st"><div><b>A1 料仓</b><small>石灰石 5-10mm</small></div><span class="tag">充足</span></div>
+            <div class="qty">3,240<small>/ 8,000 吨</small></div>
+            <div class="bar"><u style="width:41%"></u></div>
+            <div class="sft"><span>可售 2,344 · 活动 800 · 冻结 96</span><span>41%</span></div>
+            <div class="corner"></div>
+          </div>
+          <div class="silo">
+            <div class="st"><div><b>A2 料仓</b><small>石灰石 10-20mm</small></div><span class="tag">正常</span></div>
+            <div class="qty">1,860<small>/ 6,000 吨</small></div>
+            <div class="bar"><u style="width:31%"></u></div>
+            <div class="sft"><span>可售 1,160 · 活动 700 · 冻结 0</span><span>31%</span></div>
+            <div class="corner"></div>
+          </div>
+          <div class="silo warn">
+            <div class="st"><div><b>B1 料仓</b><small>机制砂 · 中砂</small></div><span class="tag">偏低</span></div>
+            <div class="qty">620<small>/ 3,000 吨</small></div>
+            <div class="bar"><u class="warn" style="width:21%"></u></div>
+            <div class="sft"><span>可售 260 · 活动 300 · 冻结 60</span><span>21%</span></div>
+            <div class="corner"></div>
+          </div>
+          <div class="silo">
+            <div class="st"><div><b>B2 料仓</b><small>铁精粉 65%</small></div><span class="tag">正常</span></div>
+            <div class="qty">480<small>/ 2,000 吨</small></div>
+            <div class="bar"><u style="width:24%"></u></div>
+            <div class="sft"><span>可售 280 · 活动 200 · 冻结 0</span><span>24%</span></div>
+            <div class="corner"></div>
+          </div>
+        </div>
+
+        <div class="card" style="padding:0;overflow:hidden">
+          <div class="card-h"><h3>出入库流水</h3><span class="more">今日 24 笔</span></div>
+          <table class="data">
+            <thead><tr><th>时间</th><th>单号</th><th>类型</th><th>物料</th><th>料仓</th><th class="num-r">数量</th><th>关联单据</th><th>操作人</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">11-01 11:38</td><td class="link">CK20261101-021</td><td><span class="pill b">销售出库</span></td><td>石灰石 5-10mm</td><td>A1</td><td class="num-r mono" style="color:var(--red)">-33.66 吨</td><td>XJ20261101008</td><td>王立</td></tr>
+              <tr><td class="mono">11-01 10:52</td><td class="link">RK20261101-008</td><td><span class="pill g">采购入库</span></td><td>石灰石 5-10mm</td><td>A1</td><td class="num-r mono" style="color:var(--green)">+312.40 吨</td><td>CG20261101-03</td><td>刘敏</td></tr>
+              <tr><td class="mono">11-01 09:26</td><td class="link">LS20261101-004</td><td><span class="pill a">冻结</span></td><td>石灰石 5-10mm</td><td>A1</td><td class="num-r mono">-96.00 吨</td><td>XJ20261101008</td><td>系统</td></tr>
+              <tr><td class="mono">11-01 08:15</td><td class="link">CK20261101-014</td><td><span class="pill b">销售出库</span></td><td>铁精粉 65%</td><td>B2</td><td class="num-r mono" style="color:var(--red)">-66.80 吨</td><td>XJ20261031015</td><td>王立</td></tr>
+              <tr><td class="mono">10-31 17:20</td><td class="link">PD20261031-01</td><td><span class="pill n">盘盈亏</span></td><td>机制砂 · 中砂</td><td>B1</td><td class="num-r mono" style="color:var(--red)">-12.00 吨</td><td>盘点单</td><td>刘敏</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 采购 -->
+      <div class="ap" id="a-buy">
+        <div class="main-head">
+          <div>
+            <h2>采购管理</h2>
+            <div class="sub">原矿采购 · 到货验收 · 供应商结算</div>
+          </div>
+          <div class="hbtns">
+            <button class="btn">供应商台账</button>
+            <button class="btn pri">+ 新建采购单</button>
+          </div>
+        </div>
+
+        <div class="kpis" style="grid-template-columns:repeat(4,1fr)">
+          <div class="kpi"><div class="kt">本月采购量</div><div class="kv2">12,400<small>吨</small></div><div class="kd"><em class="up">↑ 6.3%</em> 环比上月</div></div>
+          <div class="kpi"><div class="kt">在途量</div><div class="kv2">1,800<small>吨</small></div><div class="kd">3 车正在运输</div></div>
+          <div class="kpi"><div class="kt">采购金额</div><div class="kv2">520,800<small>元</small></div><div class="kd">含运费 · 不含税</div></div>
+          <div class="kpi"><div class="kt">应付未付</div><div class="kv2">214,600<small>元</small></div><div class="kd"><em style="color:var(--amber)">4 家</em> 供应商待结算</div></div>
+        </div>
+
+        <div class="card" style="padding:0;overflow:hidden">
+          <div class="tb-toolbar">
+            <input class="srch" placeholder="采购单号 / 供应商">
+            <select class="sel"><option>全部状态</option><option>待发货</option><option>部分到货</option><option>已入库</option></select>
+            <div class="spacer"></div>
+            <button class="btn">导出</button>
+          </div>
+          <table class="data">
+            <thead><tr><th>采购单号</th><th>供应商</th><th>物料</th><th class="num-r">采购量</th><th class="num-r">已到货</th><th>到货进度</th><th class="num-r">单价</th><th>状态</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><b class="link">CG20261101-03</b><div style="font-size:10px;color:var(--muted)">11-01 下单</div></td>
+                <td><b>磐石市恒益石灰石矿</b></td>
+                <td>石灰石原矿</td>
+                <td class="num-r mono">5,000 吨</td>
+                <td class="num-r mono">3,200 吨</td>
+                <td><div class="bar" style="width:88px"><u style="width:64%"></u></div></td>
+                <td class="num-r mono">¥42.00</td>
+                <td><span class="pill a">部分到货</span></td>
+              </tr>
+              <tr>
+                <td><b class="link">CG20261101-02</b><div style="font-size:10px;color:var(--muted)">11-01 下单</div></td>
+                <td><b>桦甸宏达砂石</b></td>
+                <td>机制砂原料</td>
+                <td class="num-r mono">2,000 吨</td>
+                <td class="num-r mono">0 吨</td>
+                <td><div class="bar" style="width:88px"><u style="width:0%"></u></div></td>
+                <td class="num-r mono">¥58.00</td>
+                <td><span class="pill b">待发货</span></td>
+              </tr>
+              <tr>
+                <td><b class="link">CG20261030-07</b><div style="font-size:10px;color:var(--muted)">10-30 下单</div></td>
+                <td><b>吉林中冶铁矿</b></td>
+                <td>铁精粉原矿</td>
+                <td class="num-r mono">1,200 吨</td>
+                <td class="num-r mono">1,200 吨</td>
+                <td><div class="bar" style="width:88px"><u style="width:100%"></u></div></td>
+                <td class="num-r mono">¥560.00</td>
+                <td><span class="pill g">已入库</span></td>
+              </tr>
+              <tr>
+                <td><b class="link">CG20261029-04</b><div style="font-size:10px;color:var(--muted)">10-29 下单</div></td>
+                <td><b>磐石市恒益石灰石矿</b></td>
+                <td>石灰石原矿</td>
+                <td class="num-r mono">4,000 吨</td>
+                <td class="num-r mono">4,000 吨</td>
+                <td><div class="bar" style="width:88px"><u style="width:100%"></u></div></td>
+                <td class="num-r mono">¥42.00</td>
+                <td><span class="pill g">已入库</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 调度过磅 -->
+      <div class="ap" id="a-dispatch">
+        <div class="main-head">
+          <div>
+            <h2>调度过磅</h2>
+            <div class="sub">派车 · 排队叫号 · 地磅采集 · 磅单归档</div>
+          </div>
+          <div class="hbtns">
+            <button class="btn">过磅记录</button>
+            <button class="btn pri">智能派车</button>
+          </div>
+        </div>
+
+        <div class="kanban" style="margin-bottom:14px">
+          <div class="kb-col">
+            <div class="kb-h"><b>待派车</b><span>4 单</span></div>
+            <div class="kb-card">
+              <div class="kb-top"><b>XJ20261101007</b><span class="pill a">急</span></div>
+              <div class="kb-cust">吉林建龙钢铁</div>
+              <div class="kb-meta"><span>铁精粉 65% · 200 吨</span><em>自提</em></div>
+              <div class="kb-tag"><span class="pill n">已锁库存</span><span class="pill n">08:47 下单</span></div>
+            </div>
+            <div class="kb-card">
+              <div class="kb-top"><b>XJ20261101005</b><span class="pill n">常规</span></div>
+              <div class="kb-cust">长春市政路桥</div>
+              <div class="kb-meta"><span>石灰石 10-20mm · 400 吨</span><em>配送</em></div>
+              <div class="kb-tag"><span class="pill n">需 6 车次</span><span class="pill n">07:55 下单</span></div>
+            </div>
+            <div class="kb-card">
+              <div class="kb-top"><b>XJ20261101004</b><span class="pill n">常规</span></div>
+              <div class="kb-cust">吉林恒泰商砼</div>
+              <div class="kb-meta"><span>机制砂 · 60 吨</span><em>配送</em></div>
+              <div class="kb-tag"><span class="pill n">运力紧张</span></div>
+            </div>
+          </div>
+
+          <div class="kb-col">
+            <div class="kb-h"><b>运输中</b><span>7 单 / 9 车</span></div>
+            <div class="kb-card" style="border-color:#cfe0ea;background:#fbfdfe">
+              <div class="kb-top"><b>XJ20261101008</b><span class="pill b">在途</span></div>
+              <div class="kb-cust">长春亚泰建材</div>
+              <div class="kb-meta"><span>吉B·8K275 · 李国强</span><em>净重 33.49t</em></div>
+              <div class="kb-tag"><span class="pill g">已过磅</span><span class="pill n">预计 10:30 到</span></div>
+            </div>
+            <div class="kb-card">
+              <div class="kb-top"><b>XJ20261101002</b><span class="pill b">在途</span></div>
+              <div class="kb-cust">四平金越建材</div>
+              <div class="kb-meta"><span>吉C·3M918 · 赵宇</span><em>净重 32.80t</em></div>
+              <div class="kb-tag"><span class="pill g">已过磅</span><span class="pill n">预计 12:10 到</span></div>
+            </div>
+            <div class="kb-card">
+              <div class="kb-top"><b>XJ20261031015</b><span class="pill b">在途</span></div>
+              <div class="kb-cust">吉林亚泰水泥</div>
+              <div class="kb-meta"><span>吉B·7T402 · 孙建国</span><em>净重 33.10t</em></div>
+              <div class="kb-tag"><span class="pill g">已过磅</span></div>
+            </div>
+          </div>
+
+          <div class="kb-col">
+            <div class="kb-h"><b>已签收待对账</b><span>12 单</span></div>
+            <div class="kb-card">
+              <div class="kb-top"><b>XJ20261031012</b><span class="pill g">已签收</span></div>
+              <div class="kb-cust">吉林亚泰水泥</div>
+              <div class="kb-meta"><span>598.42 吨 / 18 车</span><em>¥51,468</em></div>
+              <div class="kb-tag"><span class="pill n">签收 10-31 18:20</span></div>
+            </div>
+            <div class="kb-card">
+              <div class="kb-top"><b>XJ20261031009</b><span class="pill n">已对账</span></div>
+              <div class="kb-cust">四平金越建材</div>
+              <div class="kb-meta"><span>118.60 吨 / 4 车</span><em>¥11,267</em></div>
+              <div class="kb-tag"><span class="pill n">对账 11-01 09:00</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="padding:0;overflow:hidden">
+          <div class="card-h"><h3>磅单明细</h3><span class="more">地磅 WX-20261101-0386 · 已同步库存与应收</span></div>
+          <table class="data">
+            <thead><tr><th>磅单号</th><th>车牌</th><th>物料</th><th class="num-r">毛重</th><th class="num-r">皮重</th><th class="num-r">净重</th><th class="num-r">扣水</th><th class="num-r">结算吨</th><th>状态</th></tr></thead>
+            <tbody>
+              <tr><td class="link">WX-20261101-0386</td><td>吉B·8K275</td><td>石灰石 5-10mm</td><td class="num-r mono">49.86</td><td class="num-r mono">16.20</td><td class="num-r mono">33.66</td><td class="num-r mono">0.5%</td><td class="num-r mono"><b>33.49</b></td><td><span class="pill g">已同步</span></td></tr>
+              <tr><td class="link">WX-20261101-0385</td><td>吉C·3M918</td><td>石灰石 5-10mm</td><td class="num-r mono">49.02</td><td class="num-r mono">16.18</td><td class="num-r mono">32.84</td><td class="num-r mono">0.5%</td><td class="num-r mono"><b>32.68</b></td><td><span class="pill g">已同步</span></td></tr>
+              <tr><td class="link">WX-20261101-0384</td><td>吉B·7T402</td><td>铁精粉 65%</td><td class="num-r mono">—</td><td class="num-r mono">—</td><td class="num-r mono">—</td><td class="num-r mono">—</td><td class="num-r mono">—</td><td><span class="pill a">缺皮重</span></td></tr>
+              <tr><td class="link">WX-20261101-0383</td><td>吉B·2K665</td><td>石灰石 10-20mm</td><td class="num-r mono">48.90</td><td class="num-r mono">15.90</td><td class="num-r mono">33.00</td><td class="num-r mono">0.5%</td><td class="num-r mono"><b>32.84</b></td><td><span class="pill g">已同步</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 财务 -->
+      <div class="ap" id="a-fin">
+        <div class="main-head">
+          <div>
+            <h2>财务结算</h2>
+            <div class="sub">对账批次 · 应收账龄 · 开票与回款</div>
+          </div>
+          <div class="hbtns">
+            <button class="btn">生成对账单</button>
+            <button class="btn pri">登记回款</button>
+          </div>
+        </div>
+
+        <div class="kpis" style="grid-template-columns:repeat(4,1fr)">
+          <div class="kpi"><div class="kt">本月销售额</div><div class="kv2">628,400<small>元</small></div><div class="kd"><em class="up">↑ 9.1%</em> 同比</div></div>
+          <div class="kpi"><div class="kt">应收未收</div><div class="kv2">386,400<small>元</small></div><div class="kd">占月销售 61%</div></div>
+          <div class="kpi"><div class="kt">已开票未回款</div><div class="kv2">172,400<small>元</small></div><div class="kd">8 张发票</div></div>
+          <div class="kpi"><div class="kt">本月回款</div><div class="kv2">128,000<small>元</small></div><div class="kd"><em class="up">↑ 8.2%</em> 完成率 64%</div></div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card" style="padding:0;overflow:hidden">
+            <div class="card-h"><h3>对账批次</h3><span class="more">按客户 + 半月</span></div>
+            <table class="data">
+              <thead><tr><th>批次号</th><th>客户</th><th class="num-r">结算吨数</th><th class="num-r">金额</th><th>状态</th><th>操作</th></tr></thead>
+              <tbody>
+                <tr><td class="link">DZ-202610-03</td><td><b>长春亚泰建材</b></td><td class="num-r mono">1,286.4</td><td class="num-r mono">¥108,420</td><td><span class="pill a">待客户确认</span></td><td><span class="link">催办</span></td></tr>
+                <tr><td class="link">DZ-202610-02</td><td><b>吉林建龙钢铁</b></td><td class="num-r mono">860.0</td><td class="num-r mono">¥653,600</td><td><span class="pill b">已确认待开票</span></td><td><span class="link">开票</span></td></tr>
+                <tr><td class="link">DZ-202610-01</td><td><b>吉林亚泰水泥</b></td><td class="num-r mono">2,140.8</td><td class="num-r mono">¥183,880</td><td><span class="pill g">已开票</span></td><td><span class="link">查看</span></td></tr>
+                <tr><td class="link">DZ-202609-04</td><td><b>四平金越建材</b></td><td class="num-r mono">486.2</td><td class="num-r mono">¥42,760</td><td><span class="pill n">已回款</span></td><td><span class="link">核销</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="card">
+            <div class="card-h"><h3>应收账龄</h3><span class="more">合计 ¥386,400</span></div>
+            <div class="card-b" style="padding-top:8px">
+              <div class="age-row">
+                <span class="al">0-30 天</span>
+                <div class="ab"><u style="width:55%;background:linear-gradient(90deg,#4b93b5,#1b4f6c)"></u></div>
+                <span class="av">¥214,000</span>
+              </div>
+              <div class="age-row">
+                <span class="al">31-60 天</span>
+                <div class="ab"><u style="width:25%;background:linear-gradient(90deg,#e0a94b,#bd7415)"></u></div>
+                <span class="av">¥96,400</span>
+              </div>
+              <div class="age-row">
+                <span class="al">61-90 天</span>
+                <div class="ab"><u style="width:14%;background:linear-gradient(90deg,#e0876f,#c0392b)"></u></div>
+                <span class="av">¥56,000</span>
+              </div>
+              <div class="age-row">
+                <span class="al">90 天以上</span>
+                <div class="ab"><u style="width:5%;background:#8e2b20"></u></div>
+                <span class="av">¥20,000</span>
+              </div>
+              <div style="border-top:1px solid var(--line2);margin-top:10px;padding-top:11px;font-size:11.5px;color:var(--muted);line-height:1.7">
+                逾期占比 <b style="color:var(--red)">19.7%</b>，其中 <b>四平金越建材</b> 逾期 92 天，建议暂停授信。
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-h"><h3>从下单到回款，一单到底</h3><span class="more">数据同源，无需二次录入</span></div>
+          <div class="flow">
+            <div class="fl-n"><b>客户下单</b><small>H5 / 小程序<br>锁定吨数</small></div>
+            <div class="fl-a">›</div>
+            <div class="fl-n"><b>销售审核</b><small>信用额度<br>价格审批</small></div>
+            <div class="fl-a">›</div>
+            <div class="fl-n"><b>库存冻结</b><small>按料仓扣可用量</small></div>
+            <div class="fl-a">›</div>
+            <div class="fl-n"><b>调度派车</b><small>车辆 · 司机 · 排队</small></div>
+            <div class="fl-a">›</div>
+            <div class="fl-n"><b>过磅出厂</b><small>毛/皮/净重<br>自动扣水</small></div>
+            <div class="fl-a">›</div>
+            <div class="fl-n"><b>客户签收</b><small>回单上传</small></div>
+            <div class="fl-a">›</div>
+            <div class="fl-n"><b>对账开票</b><small>按批次结算</small></div>
+            <div class="fl-a">›</div>
+            <div class="fl-n" style="background:var(--brandsoft);border-color:#cfe0ea"><b>应收回款</b><small>账龄 · 核销</small></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 秒杀活动管理 -->
+      <div class="ap" id="a-seckill">
+        <div class="main-head">
+          <div>
+            <h2>秒杀活动管理</h2>
+            <div class="sub">活动 SKU · 库存预热 · 抢购资格 · 提货凭证发放</div>
+          </div>
+          <div class="hbtns">
+            <button class="btn">预热日志</button>
+            <button class="btn pri">+ 新建活动</button>
+          </div>
+        </div>
+
+        <div class="kpis" style="grid-template-columns:repeat(4,1fr)">
+          <div class="kpi"><div class="kt">进行中活动</div><div class="kv2">2<small>个</small></div><div class="kd">共 8 个活动 SKU</div></div>
+          <div class="kpi"><div class="kt">今日参与抢购</div><div class="kv2">12,480<small>次</small></div><div class="kd">峰值 QPS 8,420</div></div>
+          <div class="kpi"><div class="kt">成功发放凭证</div><div class="kv2">1,347<small>单</small></div><div class="kd"><em class="up">↑ 12.4%</em> 环比昨日</div></div>
+          <div class="kpi"><div class="kt">拦截请求</div><div class="kv2">8,620<small>次</small></div><div class="kd">售罄 6,240 · 超限 2,380</div></div>
+        </div>
+
+        <div class="act-c">
+          <div class="l">
+            <b>双十一 · 矿料限时抢购 <span class="pill g">进行中</span></b>
+            <div class="sub">11-01 00:00 — 11-03 23:59 · 8 个 SKU · 预热状态：已完成 · 创建人 张海涛</div>
+          </div>
+          <div class="m">
+            <div><small>活动库存</small><b>2,500 吨</b></div>
+            <div><small>已抢</small><b>1,347 吨</b></div>
+            <div><small>参与人次</small><b>12,480</b></div>
+          </div>
+          <div class="ops">
+            <button class="btn">重新预热</button>
+            <button class="btn">编辑</button>
+            <button class="btn">停止</button>
+          </div>
+        </div>
+
+        <div class="act-c" style="opacity:.72">
+          <div class="l">
+            <b>月末尾矿清仓 <span class="pill n">已结束</span></b>
+            <div class="sub">10-28 00:00 — 10-31 23:59 · 3 个 SKU · 预热状态：已完成</div>
+          </div>
+          <div class="m">
+            <div><small>活动库存</small><b>1,200 吨</b></div>
+            <div><small>已抢</small><b>1,200 吨</b></div>
+            <div><small>参与人次</small><b>4,610</b></div>
+          </div>
+          <div class="ops"><button class="btn">查看复盘</button></div>
+        </div>
+
+        <div class="pool-bar">
+          <div class="pb-i"><small>销售可售池</small><b>4,044 吨</b><span>正常下单可用，含已冻结订单</span></div>
+          <div class="pb-arrow"><i>划拨</i>→</div>
+          <div class="pb-i act"><small>活动库存池</small><b>2,500 吨</b><span>仅活动订单扣减，已抢 1,347 吨</span></div>
+          <div class="pb-note">
+            <b>两池互不占用</b>
+            <p>活动开始时从销售可售池划拨固定吨位写入独立的 <code>sk:stock:*</code> 键；活动订单只扣活动池，售罄也不会抢占正常订单的货。活动结束后剩余量回拨销售池，回拨动作记一条仓储流水。</p>
+          </div>
+        </div>
+
+        <div class="card" style="padding:0;overflow:hidden;margin-top:14px">
+          <div class="card-h"><h3>活动 SKU 与库存预热</h3><span class="more">活动库存独立划拨，从销售可售池扣出，两池互不占用</span></div>
+          <table class="data">
+            <thead><tr><th>活动 SKU</th><th>商品</th><th class="num-r">秒杀价</th><th class="num-r">原价</th><th class="num-r">活动库存</th><th class="num-r">销售可售</th><th class="num-r">已抢</th><th>进度</th><th>预热</th></tr></thead>
+            <tbody>
+              <tr><td><b class="link">ASK-10021</b></td><td>机制砂 · 中砂</td><td class="num-r mono">¥69.00</td><td class="num-r mono">¥95.00</td><td class="num-r mono">300 吨</td><td class="num-r mono" style="color:var(--muted)">260 吨</td><td class="num-r mono">204 吨</td><td><div class="bar" style="width:70px"><u style="width:68%;background:linear-gradient(90deg,#e0a13a,#c8801a)"></u></div></td><td><span class="pill g">已预热</span></td></tr>
+              <tr><td><b class="link">ASK-10022</b></td><td>石灰石 5-10mm</td><td class="num-r mono">¥72.00</td><td class="num-r mono">¥86.00</td><td class="num-r mono">800 吨</td><td class="num-r mono" style="color:var(--muted)">2,344 吨</td><td class="num-r mono">536 吨</td><td><div class="bar" style="width:70px"><u style="width:67%"></u></div></td><td><span class="pill g">已预热</span></td></tr>
+              <tr><td><b class="link">ASK-10023</b></td><td>石灰石 10-20mm</td><td class="num-r mono">¥68.00</td><td class="num-r mono">¥82.00</td><td class="num-r mono">700 吨</td><td class="num-r mono" style="color:var(--muted)">1,160 吨</td><td class="num-r mono">287 吨</td><td><div class="bar" style="width:70px"><u style="width:41%"></u></div></td><td><span class="pill g">已预热</span></td></tr>
+              <tr><td><b class="link">ASK-10024</b></td><td>铁精粉 65%</td><td class="num-r mono">¥680.00</td><td class="num-r mono">¥760.00</td><td class="num-r mono">200 吨</td><td class="num-r mono" style="color:var(--muted)">280 吨</td><td class="num-r mono">200 吨</td><td><div class="bar" style="width:70px"><u style="width:100%;background:#c0392b"></u></div></td><td><span class="pill n">已售罄</span></td></tr>
+              <tr><td><b class="link">ASK-10025</b></td><td>石粉 · 0-5mm</td><td class="num-r mono">¥38.00</td><td class="num-r mono">¥52.00</td><td class="num-r mono">500 吨</td><td class="num-r mono" style="color:var(--muted)">—</td><td class="num-r mono">120 吨</td><td><div class="bar" style="width:70px"><u style="width:24%"></u></div></td><td><span class="pill a">预热中</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 抢购订单 -->
+      <div class="ap" id="a-seckillorder">
+        <div class="main-head">
+          <div>
+            <h2>抢购订单</h2>
+            <div class="sub">接口快速返回订单号，消费者组异步落库 · 幂等保障</div>
+          </div>
+          <div class="hbtns">
+            <button class="btn">导出</button>
+            <button class="btn pri">一键补偿</button>
+          </div>
+        </div>
+
+        <div class="card" style="padding:0;overflow:hidden">
+          <div class="tabline">
+            <button class="on">全部<span class="num">3,860</span></button>
+            <button>排队中<span class="num">4</span></button>
+            <button>已发放<span class="num">3,842</span></button>
+            <button>发放失败<span class="num">8</span></button>
+            <button>补偿中<span class="num">6</span></button>
+          </div>
+          <div class="tb-toolbar">
+            <input class="srch" placeholder="订单号 / 用户 / SKU">
+            <select class="sel"><option>全部活动</option><option>双十一矿料抢购</option></select>
+            <div class="spacer"></div>
+            <span style="font-size:11px;color:var(--muted)">消费组 sk-order-group · 4 个消费者</span>
+          </div>
+          <table class="data">
+            <thead><tr><th>订单号</th><th>用户 / 客户</th><th>SKU</th><th class="num-r">数量</th><th class="num-r">金额</th><th>状态</th><th class="num-r">耗时</th><th>消息 ID</th></tr></thead>
+            <tbody>
+              <tr><td><b class="link">SK2026110100238</b><div style="font-size:10px;color:var(--muted)">16:42:08</div></td><td><b>张伟</b> · 长春亚泰建材</td><td>机制砂 · 中砂</td><td class="num-r mono">60 吨</td><td class="num-r mono">¥4,140</td><td><span class="pill g">已发放</span></td><td class="num-r mono">42ms</td><td style="font-size:10.5px;color:var(--muted)">1758…-0</td></tr>
+              <tr><td><b class="link">SK2026110100237</b><div style="font-size:10px;color:var(--muted)">16:42:07</div></td><td><b>王强</b> · 吉林恒泰商砼</td><td>机制砂 · 中砂</td><td class="num-r mono">60 吨</td><td class="num-r mono">¥4,140</td><td><span class="pill g">已发放</span></td><td class="num-r mono">38ms</td><td style="font-size:10.5px;color:var(--muted)">1758…-1</td></tr>
+              <tr><td><b class="link">SK2026110100236</b><div style="font-size:10px;color:var(--muted)">16:41:55</div></td><td><b>李娜</b> · 四平金越建材</td><td>石灰石 5-10mm</td><td class="num-r mono">60 吨</td><td class="num-r mono">¥4,320</td><td><span class="pill a">补偿中</span></td><td class="num-r mono">—</td><td style="font-size:10.5px;color:var(--muted)">1758…-3</td></tr>
+              <tr><td><b class="link">SK2026110100235</b><div style="font-size:10px;color:var(--muted)">16:41:50</div></td><td><b>赵刚</b> · 长春市政路桥</td><td>石灰石 10-20mm</td><td class="num-r mono">120 吨</td><td class="num-r mono">¥8,160</td><td><span class="pill r">超限拦截</span></td><td class="num-r mono">51ms</td><td style="font-size:10.5px;color:var(--muted)">1758…-4</td></tr>
+              <tr><td><b class="link">SK2026110100234</b><div style="font-size:10px;color:var(--muted)">16:41:46</div></td><td><b>陈明</b> · 吉林建龙钢铁</td><td>铁精粉 65%</td><td class="num-r mono">20 吨</td><td class="num-r mono">¥13,600</td><td><span class="pill b">排队中</span></td><td class="num-r mono">—</td><td style="font-size:10.5px;color:var(--muted)">1758…-5</td></tr>
+            </tbody>
+          </table>
+          <div class="pager">
+            <span>共 3,860 条 · 已选 0 条</span>
+            <div class="pgs"><span>‹</span><span class="on">1</span><span>2</span><span>3</span><span>›</span></div>
+          </div>
+        </div>
+
+        <div class="card" style="padding:0;overflow:hidden;margin-top:14px">
+          <div class="card-h"><h3>待补偿消息（pending-list）</h3><span class="more">消费者未 ACK 的消息由定时任务重新投递</span></div>
+          <table class="data">
+            <thead><tr><th>消息 ID</th><th>用户</th><th>SKU</th><th class="num-r">重试次数</th><th>首次投递</th><th>空闲时长</th><th>状态</th><th>操作</th></tr></thead>
+            <tbody>
+              <tr><td class="link">1758-3</td><td>李娜</td><td>石灰石 5-10mm</td><td class="num-r mono">2</td><td class="mono">16:02:11</td><td class="mono">39 分钟</td><td><span class="pill a">待补偿</span></td><td><span class="link">立即补偿</span></td></tr>
+              <tr><td class="link">1758-7</td><td>孙浩</td><td>机制砂 · 中砂</td><td class="num-r mono">1</td><td class="mono">16:18:40</td><td class="mono">23 分钟</td><td><span class="pill a">待补偿</span></td><td><span class="link">立即补偿</span></td></tr>
+              <tr><td class="link">1758-9</td><td>周敏</td><td>石灰石 10-20mm</td><td class="num-r mono">3</td><td class="mono">15:44:02</td><td class="mono">58 分钟</td><td><span class="pill r">补偿失败</span></td><td><span class="link">人工介入</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 活动监控 -->
+      <div class="ap" id="a-seckillmon">
+        <div class="main-head">
+          <div>
+            <h2>活动监控</h2>
+            <div class="sub">双十一 · 矿料限时抢购 · 实时刷新 5s</div>
+          </div>
+          <div class="hbtns">
+            <button class="btn">限流降级</button>
+            <button class="btn">导出报告</button>
+          </div>
+        </div>
+
+        <div class="kpis" style="grid-template-columns:repeat(4,1fr)">
+          <div class="kpi"><div class="kt">峰值 QPS</div><div class="kv2">8,420</div><div class="kd">限流阈值 10,000</div></div>
+          <div class="kpi"><div class="kt">Lua 平均耗时</div><div class="kv2">3.2<small>ms</small></div><div class="kd">P99 8.6 ms</div></div>
+          <div class="kpi"><div class="kt">Stream 积压</div><div class="kv2">128<small>条</small></div><div class="kd"><em style="color:var(--amber)">低于阈值</em> 1,000</div></div>
+          <div class="kpi"><div class="kt">缓存命中率</div><div class="kv2">96.4<small>%</small></div><div class="kd"><em class="up">↑ 1.8%</em> 多级叠加</div></div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-h"><h3>抢购请求 QPS</h3><span class="more">每 5 秒聚合</span></div>
+            <div class="card-b">
+              <div class="chart" style="height:150px">
+                <div class="ch-col"><div class="ch-bar" style="height:15%"><span>1.2k</span></div><div class="ch-lb">0s</div></div>
+                <div class="ch-col"><div class="ch-bar" style="height:34%"><span>2.9k</span></div><div class="ch-lb">5s</div></div>
+                <div class="ch-col"><div class="ch-bar" style="height:49%"><span>4.1k</span></div><div class="ch-lb">10s</div></div>
+                <div class="ch-col"><div class="ch-bar" style="height:77%"><span>6.5k</span></div><div class="ch-lb">15s</div></div>
+                <div class="ch-col"><div class="ch-bar" style="height:100%"><span>8.4k</span></div><div class="ch-lb">20s</div></div>
+                <div class="ch-col"><div class="ch-bar" style="height:94%"><span>8.0k</span></div><div class="ch-lb">25s</div></div>
+                <div class="ch-col"><div class="ch-bar" style="height:62%"><span>5.2k</span></div><div class="ch-lb">30s</div></div>
+                <div class="ch-col"><div class="ch-bar" style="height:82%"><span>6.9k</span></div><div class="ch-lb">35s</div></div>
+                <div class="ch-col"><div class="ch-bar" style="height:49%"><span>4.1k</span></div><div class="ch-lb">40s</div></div>
+                <div class="ch-col"><div class="ch-bar" style="height:29%"><span>2.5k</span></div><div class="ch-lb">45s</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-h"><h3>多级缓存命中率</h3><span class="more">按层统计</span></div>
+            <div class="card-b" style="padding-top:10px">
+              <div class="hit"><span class="h-l">请求内 Scope</span><div class="h-b"><u style="width:62.4%"></u></div><span class="h-v">62.4%</span><span class="h-m">本请求</span></div>
+              <div class="hit"><span class="h-l">JVM Caffeine</span><div class="h-b"><u style="width:88.1%"></u></div><span class="h-v">88.1%</span><span class="h-m">单实例</span></div>
+              <div class="hit"><span class="h-l">Memcache</span><div class="h-b"><u style="width:94.7%;background:linear-gradient(90deg,#e0a94b,#bd7415)"></u></div><span class="h-v">94.7%</span><span class="h-m">跨实例</span></div>
+              <div class="hit"><span class="h-l">Redis</span><div class="h-b"><u style="width:99.2%;background:linear-gradient(90deg,#4bb98d,#0f8a5f)"></u></div><span class="h-v">99.2%</span><span class="h-m">共享/资格</span></div>
+              <div style="border-top:1px solid var(--line2);margin-top:10px;padding-top:10px;font-size:11.5px;color:var(--muted);line-height:1.7">
+                下层命中后回填上层，同一请求内重复读取直接命中 Scope 缓存，避免一次抢购重复查库 6 次。
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2b">
+          <div class="card">
+            <div class="card-h"><h3>活动库存水位</h3><span class="more">Redis 原子扣减后回写</span></div>
+            <div class="card-b" style="padding-top:10px">
+              <div class="hit"><span class="h-l">机制砂 · 中砂</span><div class="h-b"><u style="width:32%;background:linear-gradient(90deg,#e0a94b,#bd7415)"></u></div><span class="h-v">256 吨</span><span class="h-m">/800</span></div>
+              <div class="hit"><span class="h-l">石灰石 5-10</span><div class="h-b"><u style="width:32%"></u></div><span class="h-v">388 吨</span><span class="h-m">/1200</span></div>
+              <div class="hit"><span class="h-l">石灰石 10-20</span><div class="h-b"><u style="width:59%"></u></div><span class="h-v">708 吨</span><span class="h-m">/1200</span></div>
+              <div class="hit"><span class="h-l">铁精粉 65%</span><div class="h-b"><u style="width:0%"></u></div><span class="h-v">0 吨</span><span class="h-m">售罄</span></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-h"><h3>消费组状态</h3><span class="more">sk-order-group</span></div>
+            <div class="card-b">
+              <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
+                <div style="background:#fafbfc;border:1px solid var(--line2);border-radius:8px;padding:11px 12px">
+                  <div style="font-size:10.5px;color:var(--muted)">在线消费者</div>
+                  <div style="font-size:18px;font-weight:700;margin-top:2px">4</div>
+                </div>
+                <div style="background:#fafbfc;border:1px solid var(--line2);border-radius:8px;padding:11px 12px">
+                  <div style="font-size:10.5px;color:var(--muted)">待 ACK</div>
+                  <div style="font-size:18px;font-weight:700;margin-top:2px;color:var(--amber)">128</div>
+                </div>
+                <div style="background:#fafbfc;border:1px solid var(--line2);border-radius:8px;padding:11px 12px">
+                  <div style="font-size:10.5px;color:var(--muted)">补偿中</div>
+                  <div style="font-size:18px;font-weight:700;margin-top:2px;color:var(--red)">6</div>
+                </div>
+                <div style="background:#fafbfc;border:1px solid var(--line2);border-radius:8px;padding:11px 12px">
+                  <div style="font-size:10.5px;color:var(--muted)">平均消费延迟</div>
+                  <div style="font-size:18px;font-weight:700;margin-top:2px">118<span style="font-size:11px;color:var(--muted);font-weight:400">ms</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 生产管理 -->
+      <div class="ap" id="a-prod">
+        <div class="main-head">
+          <div>
+            <h2>生产管理</h2>
+            <div class="sub">破碎线产量 · 班次 · 设备状态 · 与库存联动</div>
+          </div>
+          <div class="hbtns">
+            <button class="btn">班次设置</button>
+            <button class="btn pri">+ 报工</button>
+          </div>
+        </div>
+
+        <div class="kpis" style="grid-template-columns:repeat(4,1fr)">
+          <div class="kpi"><div class="kt">今日破碎产量</div><div class="kv2">4,860<small>吨</small></div><div class="kd"><em class="up">↑ 5.2%</em> 环比昨日</div></div>
+          <div class="kpi"><div class="kt">开机时长</div><div class="kv2">18.5<small>h</small></div><div class="kd">计划 20h · 达成 92.5%</div></div>
+          <div class="kpi"><div class="kt">综合电耗</div><div class="kv2">2.8<small>kWh/t</small></div><div class="kd"><em class="up">↓ 0.1</em> 优于基准</div></div>
+          <div class="kpi"><div class="kt">设备运转率</div><div class="kv2">92<small>%</small></div><div class="kd">1 条产线检修中</div></div>
+        </div>
+
+        <div class="silos" style="grid-template-columns:repeat(3,1fr)">
+          <div class="silo">
+            <div class="st"><div><b>1# 破碎线</b><small>颚破 + 圆锥破</small></div><span class="tag">运行</span></div>
+            <div class="qty">2,140<small>/ 2,600 吨</small></div>
+            <div class="bar"><u style="width:82%"></u></div>
+            <div class="sft"><span>当班 2,140 吨</span><span>82%</span></div>
+            <div class="corner"></div>
+          </div>
+          <div class="silo">
+            <div class="st"><div><b>2# 筛分线</b><small>三层振动筛</small></div><span class="tag">运行</span></div>
+            <div class="qty">1,860<small>/ 2,400 吨</small></div>
+            <div class="bar"><u style="width:78%"></u></div>
+            <div class="sft"><span>当班 1,860 吨</span><span>78%</span></div>
+            <div class="corner"></div>
+          </div>
+          <div class="silo warn">
+            <div class="st"><div><b>3# 制砂线</b><small>立轴冲击破</small></div><span class="tag">检修</span></div>
+            <div class="qty">860<small>/ 1,800 吨</small></div>
+            <div class="bar"><u class="warn" style="width:48%"></u></div>
+            <div class="sft"><span>当班 860 吨 · 预计 18:00 恢复</span><span>48%</span></div>
+            <div class="corner"></div>
+          </div>
+        </div>
+
+        <div class="card" style="padding:0;overflow:hidden">
+          <div class="card-h"><h3>班次产量</h3><span class="more">产出直接形成料仓入库单</span></div>
+          <table class="data">
+            <thead><tr><th>班次</th><th>产线</th><th>产量</th><th class="num-r">电耗</th><th>成材率</th><th>入库单</th><th>班组长</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">11-01 白班</td><td>1# 破碎线</td><td>石灰石 5-10mm · 1,240 吨</td><td class="num-r mono">2.6 kWh/t</td><td class="mono">68.4%</td><td><span class="link">RK20261101-009</span></td><td>刘建国</td></tr>
+              <tr><td class="mono">11-01 白班</td><td>2# 筛分线</td><td>石灰石 10-20mm · 980 吨</td><td class="num-r mono">2.9 kWh/t</td><td class="mono">64.1%</td><td><span class="link">RK20261101-010</span></td><td>王海</td></tr>
+              <tr><td class="mono">11-01 白班</td><td>3# 制砂线</td><td>机制砂 · 620 吨</td><td class="num-r mono">3.4 kWh/t</td><td class="mono">58.7%</td><td><span class="link">RK20261101-011</span></td><td>张勇</td></tr>
+              <tr><td class="mono">10-31 夜班</td><td>1# 破碎线</td><td>石灰石 5-10mm · 1,860 吨</td><td class="num-r mono">2.7 kWh/t</td><td class="mono">67.2%</td><td><span class="link">RK20261031-024</span></td><td>刘建国</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 报表中心 -->
+      <div class="ap" id="a-report">
+        <div class="main-head">
+          <div>
+            <h2>报表中心</h2>
+            <div class="sub">一张表看经营 · 数据来自订单、库存、采购、财务同一套口径</div>
+          </div>
+          <div class="hbtns">
+            <button class="btn">选择周期</button>
+            <button class="btn pri">导出 Excel</button>
+          </div>
+        </div>
+
+        <div class="kpis" style="grid-template-columns:repeat(4,1fr)">
+          <div class="kpi"><div class="kt">本月销售额</div><div class="kv2">628,400<small>元</small></div><div class="kd"><em class="up">↑ 9.1%</em> 同比</div></div>
+          <div class="kpi"><div class="kt">本月成本</div><div class="kv2">412,800<small>元</small></div><div class="kd">采购 + 运费 + 人工</div></div>
+          <div class="kpi"><div class="kt">毛利</div><div class="kv2">215,600<small>元</small></div><div class="kd"><em class="up">34.3%</em> 毛利率</div></div>
+          <div class="kpi"><div class="kt">库存周转</div><div class="kv2">6.4<small>次/月</small></div><div class="kd">较上月 +0.3</div></div>
+        </div>
+
+        <div class="grid-2b" style="margin-bottom:14px">
+          <div class="card">
+            <div class="card-h"><h3>分品种毛利</h3><span class="more">本月</span></div>
+            <div class="card-b" style="padding-top:10px">
+              <div class="hit"><span class="h-l">石灰石 5-10</span><div class="h-b"><u style="width:72%"></u></div><span class="h-v">36.2%</span><span class="h-m">241,800</span></div>
+              <div class="hit"><span class="h-l">石灰石 10-20</span><div class="h-b"><u style="width:64%"></u></div><span class="h-v">32.1%</span><span class="h-m">148,600</span></div>
+              <div class="hit"><span class="h-l">机制砂</span><div class="h-b"><u style="width:80%;background:linear-gradient(90deg,#e0a94b,#bd7415)"></u></div><span class="h-v">40.5%</span><span class="h-m">186,200</span></div>
+              <div class="hit"><span class="h-l">铁精粉</span><div class="h-b"><u style="width:41%;background:linear-gradient(90deg,#7d8894,#4d5763)"></u></div><span class="h-v">20.8%</span><span class="h-m">51,800</span></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-h"><h3>常用报表</h3><span class="more">点击生成</span></div>
+            <div class="card-b" style="padding-top:6px">
+              <div class="todo" style="padding:9px 0"><div class="td-dot"></div><div class="td-b"><b>销售日报</b> 按客户 / 品种 / 车次</div><span class="td-act">生成</span></div>
+              <div class="todo" style="padding:9px 0"><div class="td-dot"></div><div class="td-b"><b>库存收发存</b> 期初 + 入库 − 出库 = 期末</div><span class="td-act">生成</span></div>
+              <div class="todo" style="padding:9px 0"><div class="td-dot"></div><div class="td-b"><b>采购到货明细</b> 含磅差与扣水</div><span class="td-act">生成</span></div>
+              <div class="todo" style="padding:9px 0"><div class="td-dot g"></div><div class="td-b"><b>客户对账单</b> 按批次导出</div><span class="td-act">生成</span></div>
+              <div class="todo" style="padding:9px 0"><div class="td-dot"></div><div class="td-b"><b>秒杀效果复盘</b> 转化率与拉新</div><span class="td-act">生成</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="padding:0;overflow:hidden">
+          <div class="card-h"><h3>经营指标明细</h3><span class="more">2026-11-01 至 2026-11-30</span></div>
+          <table class="data">
+            <thead><tr><th>指标</th><th class="num-r">本月</th><th class="num-r">上月</th><th class="num-r">环比</th><th>口径说明</th></tr></thead>
+            <tbody>
+              <tr><td><b>销售金额</b></td><td class="num-r mono">628,400</td><td class="num-r mono">576,000</td><td class="num-r" style="color:var(--green)">+9.1%</td><td style="font-size:11px;color:var(--muted)">按结算吨数 × 单价，含税</td></tr>
+              <tr><td><b>结算吨数</b></td><td class="num-r mono">7,286</td><td class="num-r mono">6,940</td><td class="num-r" style="color:var(--green)">+5.0%</td><td style="font-size:11px;color:var(--muted)">地磅净重扣水后的吨数</td></tr>
+              <tr><td><b>采购成本</b></td><td class="num-r mono">412,800</td><td class="num-r mono">389,000</td><td class="num-r" style="color:var(--red)">+6.1%</td><td style="font-size:11px;color:var(--muted)">原矿 + 运费 + 破碎加工</td></tr>
+              <tr><td><b>毛利率</b></td><td class="num-r mono">34.3%</td><td class="num-r mono">32.5%</td><td class="num-r" style="color:var(--green)">+1.8pp</td><td style="font-size:11px;color:var(--muted)">（销售 − 成本）/ 销售</td></tr>
+              <tr><td><b>应收周转天数</b></td><td class="num-r mono">42 天</td><td class="num-r mono">47 天</td><td class="num-r" style="color:var(--green)">-5 天</td><td style="font-size:11px;color:var(--muted)">平均应收 / 日均销售</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 系统设置 -->
+      <div class="ap" id="a-setting">
+        <div class="main-head">
+          <div>
+            <h2>系统设置</h2>
+            <div class="sub">业务参数 · 秒杀限流与补偿策略 · 缓存策略</div>
+          </div>
+          <div class="hbtns"><button class="btn pri">保存</button></div>
+        </div>
+
+        <div class="grid-2b">
+          <div class="card">
+            <div class="card-h"><h3>秒杀与限流</h3><span class="more">改动即时生效</span></div>
+            <div class="card-b">
+              <div class="kv"><span>接口限流阈值</span><b>10,000 QPS</b></div>
+              <div class="kv"><span>单人单 SKU 限购</span><b>60 吨</b></div>
+              <div class="kv"><span>抢购订单支付超时</span><b>15 分钟</b></div>
+              <div class="kv"><span>消息补偿重试次数</span><b>3 次</b></div>
+              <div class="kv"><span>补偿扫描间隔</span><b>60 秒</b></div>
+              <div class="kv"><span>降级开关（售罄直接返回）</span><b style="color:var(--green)">已开启</b></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-h"><h3>缓存策略</h3><span class="more">多级缓存</span></div>
+            <div class="card-b">
+              <div class="kv"><span>请求内缓存 Scope</span><b>单次请求生命周期</b></div>
+              <div class="kv"><span>JVM LoadingCache</span><b>10 分钟 · 最大 5,000 条</b></div>
+              <div class="kv"><span>Memcache 热点详情</span><b>30 分钟</b></div>
+              <div class="kv"><span>Redis 共享缓存 TTL</span><b>30—60 秒随机</b></div>
+              <div class="kv"><span>空值缓存（防穿透）</span><b>60 秒</b></div>
+              <div class="kv"><span>逻辑过期（防击穿）</span><b style="color:var(--green)">已开启</b></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:14px">
+          <div class="card-h"><h3>缓存同步</h3><span class="more">binlog 驱动，不在业务事务内双写</span></div>
+          <div class="card-b">
+            <div class="flow">
+              <div class="fl-n"><b>MySQL 变更</b><small>活动配置<br>SKU / 价格</small></div>
+              <div class="fl-a">›</div>
+              <div class="fl-n"><b>Canal 订阅</b><small>解析 binlog</small></div>
+              <div class="fl-a">›</div>
+              <div class="fl-n"><b>变更分发</b><small>详情类 / 聚合类</small></div>
+              <div class="fl-a">›</div>
+              <div class="fl-n"><b>主动同步</b><small>详情类写 Memcache</small></div>
+              <div class="fl-a">›</div>
+              <div class="fl-n"><b>删除失效</b><small>聚合类删 Redis</small></div>
+              <div class="fl-a">›</div>
+              <div class="fl-n" style="background:var(--brandsoft);border-color:#cfe0ea"><b>广播本地失效</b><small>清 JVM 缓存</small></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+<script>
+(function(){
+  var gate = document.getElementById('gate');
+  var shell = document.getElementById('shell');
+  document.getElementById('login').addEventListener('click', function(){
+    gate.hidden = true; shell.classList.add('on');
+    document.getElementById('who').hidden = false;
+    document.getElementById('logout').hidden = false;
+    window.scrollTo(0,0);
+  });
+  document.getElementById('logout').addEventListener('click', function(){
+    shell.classList.remove('on'); gate.hidden = false;
+    document.getElementById('who').hidden = true;
+    document.getElementById('logout').hidden = true;
+  });
+
+  // 侧栏导航
+  var anav = document.getElementById('anav');
+  anav.addEventListener('click', function(e){
+    var a = e.target.closest('a'); if(!a) return;
+    e.preventDefault();
+    if(!a.dataset.p) return;
+    [].forEach.call(anav.querySelectorAll('a'), function(x){ x.classList.remove('on'); });
+    a.classList.add('on');
+    var id = a.dataset.p;
+    document.querySelectorAll('.ap').forEach(function(p){
+      p.classList.toggle('on', p.id === id);
+    });
+    document.querySelector('.main').scrollTop = 0;
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+
+  // tab 切换
+  document.querySelectorAll('.tabline').forEach(function(tl){
+    tl.addEventListener('click', function(e){
+      var b = e.target.closest('button'); if(!b) return;
+      [].forEach.call(tl.children, function(x){ x.classList.remove('on'); });
+      b.classList.add('on');
+    });
+  });
+
+  // 深链 #a-stock
+  var h = (location.hash || '').replace('#','');
+  if(h){ var lk = anav.querySelector('a[data-p="'+h+'"]'); if(lk){ gate.hidden = true; shell.classList.add('on');
+    document.getElementById('who').hidden = false;
+    document.getElementById('logout').hidden = false; lk.click(); } }
+})();
+</script>
+</body>
+</html>

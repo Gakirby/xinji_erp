@@ -1,0 +1,62 @@
+# =====================================================================
+#  鑫基矿业 ERP · 本地依赖环境
+#  本机已有 MySQL / Redis 时可以不跑这个文件，直接改 application.yml 即可。
+#  用法：docker compose up -d
+# =====================================================================
+version: "3.8"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: xinji-mysql
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: "1234"
+      MYSQL_DATABASE: "xinji_erp"
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_general_ci
+      - --default-time-zone=+08:00
+    volumes:
+      - xinji-mysql-data:/var/lib/mysql
+      # 首次启动自动建表并灌入演示数据。
+      # MySQL 镜像按文件名顺序执行初始化脚本，所以用 01-/02- 前缀强制先建表后插数据。
+      - ./server/src/main/resources/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./server/src/main/resources/db/data.sql:/docker-entrypoint-initdb.d/02-data.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p1234"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:6.2
+    container_name: xinji-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - xinji-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # 可选：第三级缓存。启用后把 application.yml 里
+  # xinji.cache.memcached-enabled 改成 true
+  memcached:
+    image: memcached:1.6-alpine
+    container_name: xinji-memcached
+    restart: unless-stopped
+    ports:
+      - "11211:11211"
+    profiles: ["cache"]
+
+volumes:
+  xinji-mysql-data:
+  xinji-redis-data:

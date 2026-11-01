@@ -1,0 +1,967 @@
+### =====================================================================
+###  吉林鑫基矿业 · 矿石配送 ERP  —— 接口验收请求集
+###  用法：用 IntelliJ IDEA 打开本文件，每个请求左边会出现绿色箭头，点一下即可运行。
+###        运行时会自动把 token、单号等变量存到全局，后面的请求直接复用，从上往下点完就是一次完整验收。
+###  注意：先启动应用（ErpApplication 或 java -jar），再执行本文件。
+### =====================================================================
+
+@host = http://127.0.0.1:8080
+
+### ---------------------------------------------------------------------
+### 01 员工登录（ERP 运营后台）
+### 期望：code=0，返回 token、role=ADMIN、displayName=李国强
+### ---------------------------------------------------------------------
+# @name employeeLogin
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123",
+  "userType": "EMPLOYEE"
+}
+
+> {%
+    client.test("员工登录成功", function () {
+        client.assert(response.body.code === 0, "登录失败: " + response.body.msg);
+        client.assert(response.body.data.role === "ADMIN", "角色不对");
+    });
+    client.global.set("adminToken", response.body.data.token);
+%}
+
+### ---------------------------------------------------------------------
+### 02 客户登录（网页商城 / 小程序共用同一个 customer_id）
+### 期望：code=0，customerId=1，displayName=长春亚泰建材有限公司
+### ---------------------------------------------------------------------
+# @name customerLogin
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "yatai",
+  "password": "123456",
+  "userType": "CUSTOMER"
+}
+
+> {%
+    client.test("客户登录成功", function () {
+        client.assert(response.body.code === 0, "登录失败: " + response.body.msg);
+        client.assert(response.body.data.customerId === 1, "customer_id 不对");
+    });
+    client.global.set("customerToken", response.body.data.token);
+%}
+
+### ---------------------------------------------------------------------
+### 03 当前登录信息
+### ---------------------------------------------------------------------
+GET {{host}}/api/auth/me
+Authorization: Bearer {{adminToken}}
+
+### ---------------------------------------------------------------------
+### 04 【三端隔离】客户 token 访问后台接口
+### 期望：{"code":403,"msg":"无权限访问管理后台接口"}
+### 这一条是客户最关心的：运营后台不能被客户看到，靠后端拦，不是靠前端藏菜单
+### ---------------------------------------------------------------------
+GET {{host}}/api/admin/orders?page=1&size=5
+Authorization: Bearer {{customerToken}}
+
+> {%
+    client.test("客户访问后台被拦截", function () {
+        client.assert(response.body.code === 403, "没拦住！实际: " + JSON.stringify(response.body));
+    });
+%}
+
+### ---------------------------------------------------------------------
+### 05 【三端隔离】不带 token 访问后台接口
+### 期望：{"code":401,"msg":"缺少登录凭证，请先登录"}
+### ---------------------------------------------------------------------
+GET {{host}}/api/admin/orders?page=1&size=5
+
+### ---------------------------------------------------------------------
+### 06 客户端商品列表（库存双池）
+### 期望：石灰石 5-10mm —— 可售 2344 / 活动 800 / 冻结 96 / 总量 3240
+###       三个池子加起来 = 物理总库存，这是验收重点
+### ---------------------------------------------------------------------
+GET {{host}}/api/client/products
+Authorization: Bearer {{customerToken}}
+
+> {%
+    client.test("双池恒等式成立", function () {
+        const s = response.body.data[0];
+        client.assert(s.saleableQty + s.activityAllocQty + s.frozenQty === s.totalQty,
+            "三个池子加起来不等于总库存");
+    });
+%}
+
+### ---------------------------------------------------------------------
+### 07 商品详情
+### ---------------------------------------------------------------------
+GET {{host}}/api/client/products/1
+Authorization: Bearer {{customerToken}}
+
+### ---------------------------------------------------------------------
+### 08 后台物料列表（三个库存口径，实时读库不走缓存）
+### ---------------------------------------------------------------------
+GET {{host}}/api/admin/products
+Authorization: Bearer {{adminToken}}
+
+### ---------------------------------------------------------------------
+### 09 库存预警（只返回低于安全库存的物料）
+### ---------------------------------------------------------------------
+GET {{host}}/api/admin/products/warnings
+Authorization: Bearer {{adminToken}}
+
+### ---------------------------------------------------------------------
+### 10 采购建单
+### ---------------------------------------------------------------------
+# @name createPurchase
+POST {{host}}/api/admin/purchase/orders
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "supplierName": "龙潭采石场",
+  "skuId": 2,
+  "planQty": 200,
+  "price": 58.00,
+  "expectedDate": "2026-11-08"
+}
+
+> {%
+    client.global.set("purchaseId", response.body.data.id);
+%}
+
+### ---------------------------------------------------------------------
+### 11 采购到货入库 120 吨
+### 期望：状态 PARTIAL，到货金额 6960（120×58）
+### ---------------------------------------------------------------------
+POST {{host}}/api/admin/purchase/orders/{{purchaseId}}/arrive
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "arrivedQty": 120,
+  "remark": "第一车到货"
+}
+
+### ---------------------------------------------------------------------
+### 12 采购到货后查台账
+### 期望：一条 INBOUND 120 吨，beforeQty 1160 → afterQty 1280
+### ---------------------------------------------------------------------
+GET {{host}}/api/admin/stock/flows?skuId=2&page=1&size=3
+Authorization: Bearer {{adminToken}}
+
+### ---------------------------------------------------------------------
+### 13 【核心链路】客户下单 30 吨石灰石
+### 期望：返回订单号；可售 2344→2314，冻结 96→126，总库存仍是 3240
+### ---------------------------------------------------------------------
+# @name createOrder
+POST {{host}}/api/client/orders
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "deliveryType": "DELIVERY",
+  "expectedDate": "11-05 08:00 — 12:00",
+  "receiver": "张伟",
+  "address": "吉林省长春市二道区英俊镇建龙北路18号",
+  "items": [
+    { "skuId": 1, "qty": 30 }
+  ],
+  "remark": "验收测试单"
+}
+
+> {%
+    client.test("下单成功", function () {
+        client.assert(response.body.code === 0, "下单失败: " + response.body.msg);
+    });
+    client.global.set("orderNo", response.body.data.order.orderNo);
+%}
+
+### ---------------------------------------------------------------------
+### 14 下单后校验：可售减少、冻结增加、总量不变
+### ---------------------------------------------------------------------
+GET {{host}}/api/client/products
+Authorization: Bearer {{customerToken}}
+
+### ---------------------------------------------------------------------
+### 15 【防超卖】下单 99999 吨
+### 期望：{"code":500,"msg":"「石灰石 5-10mm」可售库存不足，当前可售 2314 吨，本次需要 99999 吨"}
+### ---------------------------------------------------------------------
+POST {{host}}/api/client/orders
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "deliveryType": "DELIVERY",
+  "expectedDate": "11-05",
+  "receiver": "张伟",
+  "address": "长春",
+  "items": [
+    { "skuId": 1, "qty": 99999 }
+  ]
+}
+
+> {%
+    client.test("超量下单被拦截", function () {
+        client.assert(response.body.code === 500, "没拦住！");
+    });
+%}
+
+### ---------------------------------------------------------------------
+### 16 后台审核通过 → AUDITED
+### ---------------------------------------------------------------------
+POST {{host}}/api/admin/orders/{{orderNo}}/audit
+Authorization: Bearer {{adminToken}}
+
+### ---------------------------------------------------------------------
+### 17 派车 → DISPATCHED
+### ---------------------------------------------------------------------
+POST {{host}}/api/admin/orders/{{orderNo}}/dispatch
+Authorization: Bearer {{adminToken}}
+
+### ---------------------------------------------------------------------
+### 18 出厂 → SHIPPED（核销冻结量，physical 库存减少 30）
+### ---------------------------------------------------------------------
+POST {{host}}/api/admin/orders/{{orderNo}}/ship
+Authorization: Bearer {{adminToken}}
+
+### ---------------------------------------------------------------------
+### 19 出厂后校验：冻结 126→96，总库存 3240→3210
+### ---------------------------------------------------------------------
+GET {{host}}/api/client/products
+Authorization: Bearer {{customerToken}}
+
+### ---------------------------------------------------------------------
+### 20 过磅出票
+### 期望：净重 35.200、扣水 0.387、扣杂 0.150、结算 34.663
+### ---------------------------------------------------------------------
+POST {{host}}/api/admin/weigh/tickets
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "orderNo": "{{orderNo}}",
+  "skuId": 1,
+  "plateNo": "吉B·9T001",
+  "driverName": "赵师傅",
+  "driverPhone": "13900008811",
+  "grossWeight": 52.400,
+  "tareWeight": 17.200,
+  "waterRate": 0.011,
+  "impurityDeductWeight": 0.150,
+  "weighman": "王立"
+}
+
+> {%
+    client.test("过磅计算正确", function () {
+        const d = response.body.data;
+        client.assert(Math.abs(d.netWeight - 35.2) < 0.001, "净重不对: " + d.netWeight);
+        client.assert(Math.abs(d.settleWeight - 34.663) < 0.001, "结算量不对: " + d.settleWeight);
+    });
+%}
+
+### ---------------------------------------------------------------------
+### 21 过磅后查订单明细：settleQty 应已回填 34.663，settleAmount 2981.02
+### ---------------------------------------------------------------------
+GET {{host}}/api/admin/orders/{{orderNo}}
+Authorization: Bearer {{adminToken}}
+
+> {%
+    client.test("结算量已回填", function () {
+        const it = response.body.data.items[0];
+        client.assert(Math.abs(it.settleQty - 34.663) < 0.001, "结算量没回填");
+    });
+%}
+
+### ---------------------------------------------------------------------
+### 22 客户签收 → SIGNED
+### ---------------------------------------------------------------------
+POST {{host}}/api/admin/orders/{{orderNo}}/sign
+Authorization: Bearer {{adminToken}}
+
+### ---------------------------------------------------------------------
+### 23 磅单列表
+### ---------------------------------------------------------------------
+GET {{host}}/api/admin/weigh/tickets
+Authorization: Bearer {{adminToken}}
+
+### ---------------------------------------------------------------------
+### 24 生成对账批次（客户 2 吉林建龙，账期 2026-11-01）
+### 说明：种子数据里 XJ20261101008 是 SIGNED 状态，会被收进批次并自动转 SETTLED
+### ---------------------------------------------------------------------
+# @name createSettlement
+POST {{host}}/api/admin/finance/settlements
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "customerId": 2,
+  "periodStart": "2026-11-01",
+  "periodEnd": "2026-11-01"
+}
+
+> {%
+    client.global.set("settlementId", response.body.data.id);
+%}
+
+### ---------------------------------------------------------------------
+### 25 对账明细
+### ---------------------------------------------------------------------
+GET {{host}}/api/admin/finance/settlements/{{settlementId}}/items
+Authorization: Bearer {{adminToken}}
+
+### ---------------------------------------------------------------------
+### 26 客户确认对账 → 生成应收（30 天账期）
+### ---------------------------------------------------------------------
+# @name confirmSettlement
+POST {{host}}/api/admin/finance/settlements/{{settlementId}}/confirm
+Authorization: Bearer {{adminToken}}
+
+> {%
+    client.global.set("receivableId", response.body.data.id);
+%}
+
+### ---------------------------------------------------------------------
+### 27 重复确认被拦截
+### 期望：{"code":500,"msg":"该批次状态为「CONFIRMED」，不能重复确认"}
+### ---------------------------------------------------------------------
+POST {{host}}/api/admin/finance/settlements/{{settlementId}}/confirm
+Authorization: Bearer {{adminToken}}
+
+### ---------------------------------------------------------------------
+### 28 收款登记 2000 元
+### 期望：receivedAmount=2000，status=PARTIAL
+### ---------------------------------------------------------------------
+POST {{host}}/api/admin/finance/receivables/{{receivableId}}/receive?amount=2000
+Authorization: Bearer {{adminToken}}
+
+### ---------------------------------------------------------------------
+### 29 超额收款被拦截
+### ---------------------------------------------------------------------
+POST {{host}}/api/admin/finance/receivables/{{receivableId}}/receive?amount=999999
+Authorization: Bearer {{adminToken}}
+
+### ---------------------------------------------------------------------
+### 30 应收列表 / 应收未收合计
+### ---------------------------------------------------------------------
+GET {{host}}/api/admin/finance/receivables
+Authorization: Bearer {{adminToken}}
+
+###
+GET {{host}}/api/admin/finance/receivables/outstanding
+Authorization: Bearer {{adminToken}}
+
+### =====================================================================
+###  以下是秒杀链路，注意按顺序执行
+### =====================================================================
+
+### ---------------------------------------------------------------------
+### 31 活动列表
+### ---------------------------------------------------------------------
+GET {{host}}/api/client/seckill/activities
+Authorization: Bearer {{customerToken}}
+
+### ---------------------------------------------------------------------
+### 32 活动 SKU（活动池与销售池分别展示）
+### 期望：石灰石 5-10mm —— 活动量 800、已抢 536、剩余 264、销售可售 2314
+### ---------------------------------------------------------------------
+GET {{host}}/api/client/seckill/activities/1/skus
+Authorization: Bearer {{customerToken}}
+
+### ---------------------------------------------------------------------
+### 33 【必做】活动预热：活动库存写进 Redis
+### 不预热的话抢购会返回「活动库存尚未预热」
+### ---------------------------------------------------------------------
+POST {{host}}/api/admin/seckill/activities/1/warmup
+Authorization: Bearer {{adminToken}}
+
+### ---------------------------------------------------------------------
+### 34 抢购 20 吨石灰石 5-10mm（Redis Lua 原子扣减）
+### 期望：success=true，remainStock=244，返回令牌号
+### ---------------------------------------------------------------------
+# @name grab
+POST {{host}}/api/client/seckill/grab
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "seckillSkuId": 2,
+  "qty": 20
+}
+
+> {%
+    client.test("抢购成功", function () {
+        client.assert(response.body.data.success === true, "没抢到: " + response.body.data.reason);
+    });
+    client.global.set("tokenNo", response.body.data.tokenNo);
+%}
+
+### ---------------------------------------------------------------------
+### 35 【一人一单】重复抢购
+### 期望：success=false，reason="每人限抢一份，你已经抢到过了"
+### ---------------------------------------------------------------------
+POST {{host}}/api/client/seckill/grab
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "seckillSkuId": 2,
+  "qty": 5
+}
+
+> {%
+    client.test("一人一单生效", function () {
+        client.assert(response.body.data.success === false, "居然抢到了第二单！");
+    });
+%}
+
+### ---------------------------------------------------------------------
+### 36 【超限】一次抢 100 吨（限购 60）
+### 期望：reason="超过每人限购 60.000 吨"
+### ---------------------------------------------------------------------
+POST {{host}}/api/client/seckill/grab
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "seckillSkuId": 3,
+  "qty": 100
+}
+
+### ---------------------------------------------------------------------
+### 37 查令牌发放结果（Redis Stream 异步落库）
+### 说明：抢购是异步发券，等 1~2 秒再点这条，状态应为 ISSUED
+### ---------------------------------------------------------------------
+GET {{host}}/api/client/seckill/tokens/{{tokenNo}}
+Authorization: Bearer {{customerToken}}
+
+> {%
+    client.test("令牌已发放", function () {
+        client.assert(response.body.data.status === "ISSUED", "当前状态: " + response.body.data.status);
+    });
+%}
+
+### ---------------------------------------------------------------------
+### 38 我的抢购记录
+### ---------------------------------------------------------------------
+GET {{host}}/api/client/seckill/tokens
+Authorization: Bearer {{customerToken}}
+
+### ---------------------------------------------------------------------
+### 39 令牌核销下单（活动价 72 元/吨 × 20 吨 = 1440 元）
+### ---------------------------------------------------------------------
+POST {{host}}/api/client/seckill/tokens/{{tokenNo}}/order
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "deliveryType": "DELIVERY",
+  "expectedDate": "11-05 08:00 — 12:00",
+  "receiver": "张伟",
+  "address": "吉林省长春市二道区英俊镇建龙北路18号"
+}
+
+> {%
+    client.test("活动价成交", function () {
+        const o = response.body.data.order;
+        client.assert(o.orderType === "SECKILL", "订单类型不对");
+        client.assert(o.payAmount === 1440, "金额不对: " + o.payAmount);
+    });
+%}
+
+### ---------------------------------------------------------------------
+### 40 【双池关键校验】兑换后活动划拨量 800→780，销售可售量不变
+### 这一条最能说明「活动库存独立于销售库存」
+### ---------------------------------------------------------------------
+GET {{host}}/api/client/products
+Authorization: Bearer {{customerToken}}
+
+> {%
+    client.test("活动池扣减、销售池不动", function () {
+        const s = response.body.data[0];
+        client.assert(s.activityAllocQty === 780, "活动池没扣: " + s.activityAllocQty);
+        client.assert(s.saleableQty === 2314, "销售池不该变: " + s.saleableQty);
+    });
+%}
+
+### ---------------------------------------------------------------------
+### 41 令牌重复使用被拦截
+### 期望：{"code":500,"msg":"令牌状态为「USED」，无法下单"}
+### ---------------------------------------------------------------------
+POST {{host}}/api/client/seckill/tokens/{{tokenNo}}/order
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "deliveryType": "DELIVERY",
+  "expectedDate": "11-05"
+}
+
+### ---------------------------------------------------------------------
+### 42 秒杀监控（消费组存活、pending-list 积压）
+### 期望：pendingCount=0，consumerRunning=true
+### ---------------------------------------------------------------------
+GET {{host}}/api/admin/seckill/monitor
+Authorization: Bearer {{adminToken}}
+
+### ---------------------------------------------------------------------
+### 43 后台抢购令牌流水
+### ---------------------------------------------------------------------
+GET {{host}}/api/admin/seckill/tokens?page=1&size=10
+Authorization: Bearer {{adminToken}}
+
+### =====================================================================
+###  库存与统计
+### =====================================================================
+
+### ---------------------------------------------------------------------
+### 44 库存台账（最近 10 条，每条带 beforeQty/afterQty 可逐笔倒推）
+### ---------------------------------------------------------------------
+GET {{host}}/api/admin/stock/flows?page=1&size=10
+Authorization: Bearer {{adminToken}}
+
+### ---------------------------------------------------------------------
+### 45 按业务类型汇总库存变动
+### ---------------------------------------------------------------------
+GET {{host}}/api/admin/stock/summary
+Authorization: Bearer {{adminToken}}
+
+### ---------------------------------------------------------------------
+### 46 划拨：销售可售池 → 活动池（物理总量不变）
+### ---------------------------------------------------------------------
+POST {{host}}/api/admin/stock/alloc
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "skuId": 1,
+  "qty": 100,
+  "seckillSkuId": 2,
+  "bizNo": "ACT-20261101",
+  "remark": "双十一追加活动库存"
+}
+
+### ---------------------------------------------------------------------
+### 47 回拨：活动池 → 销售可售池
+### ---------------------------------------------------------------------
+POST {{host}}/api/admin/stock/return
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "skuId": 1,
+  "qty": 100,
+  "seckillSkuId": 2,
+  "bizNo": "ACT-20261101",
+  "remark": "活动结束剩余量回收"
+}
+
+### ---------------------------------------------------------------------
+### 48 后台工作台 KPI
+### 期望：能看到订单分布、可售总量、活动划拨总量、物理总库存、应收未收、库存预警
+### ---------------------------------------------------------------------
+GET {{host}}/api/admin/dashboard/summary
+Authorization: Bearer {{adminToken}}
+
+###
+GET {{host}}/api/admin/dashboard/orders/by-status
+Authorization: Bearer {{adminToken}}
+
+###
+GET {{host}}/api/admin/dashboard/orders/recent
+Authorization: Bearer {{adminToken}}
+
+### ---------------------------------------------------------------------
+### 49 采购单列表
+### ---------------------------------------------------------------------
+GET {{host}}/api/admin/purchase/orders
+Authorization: Bearer {{adminToken}}
+
+### ---------------------------------------------------------------------
+### 50 健康检查（不需要 token）
+### ---------------------------------------------------------------------
+GET {{host}}/actuator/health
+
+### =====================================================================
+###  扩展域：客户授信 / 物料档案 / 调度 / 生产 / 报表 / 发票 / 账号
+### =====================================================================
+
+### ---------------------------------------------------------------------
+### 51 客户分页
+### ---------------------------------------------------------------------
+GET {{host}}/api/admin/customers?page=1&size=5
+Authorization: Bearer {{adminToken}}
+
+### ---------------------------------------------------------------------
+### 52 新建客户
+### ---------------------------------------------------------------------
+# @name createCustomer
+POST {{host}}/api/admin/customers
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "customerName": "桦甸宏达建材有限公司",
+  "contactName": "马涛",
+  "contactPhone": "13904327788",
+  "address": "吉林省桦甸市经济开发区",
+  "creditLimit": 200000
+}
+
+> {%
+    client.test("客户建档成功", function () {
+        client.assert(response.body.code === 0, "建档失败: " + response.body.msg);
+    });
+    client.global.set("newCustomerId", response.body.data.id);
+%}
+
+### ---------------------------------------------------------------------
+### 53 调整授信额度（调低到 15 万）
+### ---------------------------------------------------------------------
+POST {{host}}/api/admin/customers/{{newCustomerId}}/credit?creditLimit=150000
+Authorization: Bearer {{adminToken}}
+
+### ---------------------------------------------------------------------
+### 54 客户详情（授信可用 / 占用率 / 是否已开账号）
+### ---------------------------------------------------------------------
+GET {{host}}/api/admin/customers/{{newCustomerId}}
+Authorization: Bearer {{adminToken}}
+
+### ---------------------------------------------------------------------
+### 55 授信预警（已用超 80%）
+### ---------------------------------------------------------------------
+GET {{host}}/api/admin/customers/credit-warnings
+Authorization: Bearer {{adminToken}}
+
+### ---------------------------------------------------------------------
+### 56 物料建档（期初 50 吨，自动写 INBOUND 台账）
+### 期望：返回 stockQty=50
+### ---------------------------------------------------------------------
+# @name createSku
+POST {{host}}/api/admin/products
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "skuName": "石灰石 30-50mm",
+  "category": "石灰石",
+  "spec": "压碎值≤12%",
+  "price": 75.00,
+  "warehouseId": 1,
+  "safetyQty": 100,
+  "initQty": 50
+}
+
+> {%
+    client.test("期初库存已入池", function () {
+        client.assert(response.body.code === 0, "建档失败: " + response.body.msg);
+        client.assert(response.body.data.stockQty === 50, "期初库存应为 50 吨");
+    });
+    client.global.set("newSkuId", response.body.data.id);
+%}
+
+### ---------------------------------------------------------------------
+### 57 新物料台账（应有 INBOUND 50 吨）
+### ---------------------------------------------------------------------
+GET {{host}}/api/admin/stock/flows?skuId={{newSkuId}}&page=1&size=3
+Authorization: Bearer {{adminToken}}
+
+### ---------------------------------------------------------------------
+### 58 料仓列表
+### ---------------------------------------------------------------------
+GET {{host}}/api/admin/products/warehouses
+Authorization: Bearer {{adminToken}}
+
+### ---------------------------------------------------------------------
+### 59 车辆 / 司机档案
+### ---------------------------------------------------------------------
+GET {{host}}/api/admin/dispatch/vehicles
+Authorization: Bearer {{adminToken}}
+
+###
+GET {{host}}/api/admin/dispatch/drivers
+Authorization: Bearer {{adminToken}}
+
+### ---------------------------------------------------------------------
+### 60 保险到期提醒（30 天内）
+### ---------------------------------------------------------------------
+GET {{host}}/api/admin/dispatch/vehicles/insurance-warnings
+Authorization: Bearer {{adminToken}}
+
+### ---------------------------------------------------------------------
+### 61 审核订单 4，然后派车
+### 期望：派车成功，订单状态变 DISPATCHED
+### ---------------------------------------------------------------------
+POST {{host}}/api/admin/orders/XJ20261101004/audit
+Authorization: Bearer {{adminToken}}
+
+###
+# @name createDispatch
+POST {{host}}/api/admin/dispatch/orders
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "orderNo": "XJ20261101004",
+  "vehicleId": 4,
+  "driverId": 4,
+  "planQty": 30,
+  "planTime": "2026-11-03 07:30:00",
+  "remark": "IDEA 验收派车"
+}
+
+> {%
+    client.test("派车成功", function () {
+        client.assert(response.body.code === 0, "派车失败: " + response.body.msg);
+    });
+    client.global.set("dispatchId", response.body.data.id);
+%}
+
+### ---------------------------------------------------------------------
+### 62 派车后订单状态
+### ---------------------------------------------------------------------
+GET {{host}}/api/admin/orders/XJ20261101004
+Authorization: Bearer {{adminToken}}
+
+### ---------------------------------------------------------------------
+### 63 重复派车（期望报错）
+### ---------------------------------------------------------------------
+POST {{host}}/api/admin/dispatch/orders
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "orderNo": "XJ20261101004",
+  "vehicleId": 1,
+  "driverId": 1,
+  "planQty": 10
+}
+
+### ---------------------------------------------------------------------
+### 64 派车单转装车中 + 调度看板
+### ---------------------------------------------------------------------
+POST {{host}}/api/admin/dispatch/orders/{{dispatchId}}/loading
+Authorization: Bearer {{adminToken}}
+
+###
+GET {{host}}/api/admin/dispatch/board
+Authorization: Bearer {{adminToken}}
+
+### ---------------------------------------------------------------------
+### 65 生产工单：建单 → 开工 → 完工报产
+### 期望：完工后石粉可售量 +180，台账多一条 INBOUND
+### ---------------------------------------------------------------------
+# @name createProduction
+POST {{host}}/api/admin/production/orders
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "lineName": "一号破碎线",
+  "shift": "夜班",
+  "skuId": 5,
+  "planQty": 200,
+  "feedQty": 230,
+  "operator": "王立",
+  "remark": "IDEA 验收工单"
+}
+
+> {%
+    client.global.set("productionId", response.body.data.id);
+%}
+
+###
+POST {{host}}/api/admin/production/orders/{{productionId}}/start
+Authorization: Bearer {{adminToken}}
+
+###
+POST {{host}}/api/admin/production/orders/{{productionId}}/finish
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "outputQty": 180,
+  "feedQty": 228,
+  "remark": "成品率 78.9%"
+}
+
+### ---------------------------------------------------------------------
+### 66 重复报产（期望报错：已完工）
+### ---------------------------------------------------------------------
+POST {{host}}/api/admin/production/orders/{{productionId}}/finish
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "outputQty": 10
+}
+
+### ---------------------------------------------------------------------
+### 67 生产看板
+### ---------------------------------------------------------------------
+GET {{host}}/api/admin/production/board
+Authorization: Bearer {{adminToken}}
+
+### ---------------------------------------------------------------------
+### 68 报表中心：经营总览 / 销售日报 / 账龄
+### ---------------------------------------------------------------------
+GET {{host}}/api/admin/reports/overview
+Authorization: Bearer {{adminToken}}
+
+###
+GET {{host}}/api/admin/reports/sales/daily?from=2026-10-30&to=2026-11-01
+Authorization: Bearer {{adminToken}}
+
+###
+GET {{host}}/api/admin/reports/receivable/aging
+Authorization: Bearer {{adminToken}}
+
+### ---------------------------------------------------------------------
+### 69 发票：从应收单开票 → 开具 → 统计
+### ---------------------------------------------------------------------
+# @name createInvoice
+POST {{host}}/api/admin/finance/invoices
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "receivableId": 3,
+  "invoiceType": "VAT_SPECIAL",
+  "taxRate": 0.13,
+  "remark": "IDEA 验收开票"
+}
+
+> {%
+    client.test("开票申请成功", function () {
+        client.assert(response.body.code === 0, "开票失败: " + response.body.msg);
+    });
+    client.global.set("invoiceId", response.body.data.id);
+%}
+
+###
+POST {{host}}/api/admin/finance/invoices/{{invoiceId}}/issue
+Authorization: Bearer {{adminToken}}
+
+###
+GET {{host}}/api/admin/finance/invoices/stats
+Authorization: Bearer {{adminToken}}
+
+### ---------------------------------------------------------------------
+### 70 收款登记（带收款方式）→ 收款流水 → 回款统计
+### ---------------------------------------------------------------------
+POST {{host}}/api/admin/finance/receivables/3/receive-detail?amount=20000&payMethod=CHECK
+Authorization: Bearer {{adminToken}}
+
+###
+GET {{host}}/api/admin/finance/payments
+Authorization: Bearer {{adminToken}}
+
+###
+GET {{host}}/api/admin/finance/payments/stats
+Authorization: Bearer {{adminToken}}
+
+### ---------------------------------------------------------------------
+### 71 账号：新建员工 → 登录 → 停用 → 重置密码
+### ---------------------------------------------------------------------
+# @name createEmployee
+POST {{host}}/api/admin/users
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "username": "zhaowei",
+  "password": "123456",
+  "mobile": "13904329988",
+  "userType": "EMPLOYEE",
+  "role": "SALES",
+  "employeeName": "赵伟"
+}
+
+> {%
+    client.global.set("newUserId", response.body.data.id);
+%}
+
+###
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "zhaowei",
+  "password": "123456",
+  "userType": "EMPLOYEE"
+}
+
+### ---------------------------------------------------------------------
+### 72 给客户开账号（网页商城 / 小程序共用同一 customer_id）
+### ---------------------------------------------------------------------
+POST {{host}}/api/admin/users
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "username": "hd_user",
+  "password": "123456",
+  "userType": "CUSTOMER",
+  "customerId": {{newCustomerId}}
+}
+
+###
+POST {{host}}/api/admin/users/{{newUserId}}/reset-password?newPassword=abc123456
+Authorization: Bearer {{adminToken}}
+
+###
+POST {{host}}/api/admin/users/{{newUserId}}/status?status=0
+Authorization: Bearer {{adminToken}}
+
+###
+GET {{host}}/api/admin/users/overview
+Authorization: Bearer {{adminToken}}
+
+### ---------------------------------------------------------------------
+### 73 秒杀运营：新建活动 → 追加物料（划拨 50 吨）→ 发布 → 预热 → 结束回拨
+### ---------------------------------------------------------------------
+# @name createActivity
+POST {{host}}/api/admin/seckill/activities
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "activityName": "IDEA 验收 · 夜场限时抢",
+  "startTime": "2026-11-01 20:00:00",
+  "endTime": "2026-11-02 23:00:00"
+}
+
+> {%
+    client.global.set("newActivityId", response.body.data.id);
+%}
+
+###
+POST {{host}}/api/admin/seckill/activities/{{newActivityId}}/skus
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "skuId": 2,
+  "seckillPrice": 60,
+  "activityStock": 50,
+  "limitPerUser": 10
+}
+
+###
+POST {{host}}/api/admin/seckill/activities/{{newActivityId}}/publish
+Authorization: Bearer {{adminToken}}
+
+###
+POST {{host}}/api/admin/seckill/activities/{{newActivityId}}/warmup
+Authorization: Bearer {{adminToken}}
+
+###
+POST {{host}}/api/admin/seckill/activities/{{newActivityId}}/finish
+Authorization: Bearer {{adminToken}}
+
+### ---------------------------------------------------------------------
+### 74 工作台 KPI（含调度 / 生产 / 开票待办）
+### ---------------------------------------------------------------------
+GET {{host}}/api/admin/dashboard/summary
+Authorization: Bearer {{adminToken}}

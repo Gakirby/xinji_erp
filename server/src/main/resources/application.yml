@@ -1,0 +1,131 @@
+server:
+  port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+
+spring:
+  application:
+    name: xinji-erp
+  profiles:
+    active: dev
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+    default-property-inclusion: non_null
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    banner: false
+    db-config:
+      id-type: auto
+      table-prefix: t_
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+# ===================== 业务自定义配置 =====================
+xinji:
+  jwt:
+    # 生产环境务必替换为 32 位以上的随机串
+    secret: xinji-mining-erp-jwt-secret-key-2026-change-in-prod
+    expire-minutes: 720
+  cache:
+    # Memcached 默认关闭：本机没有 memcached 时不会影响启动
+    # 部署了 memcached 后把 enabled 改成 true 即可启用第三级缓存
+    memcached-enabled: false
+    memcached-host: 127.0.0.1
+    memcached-port: 11211
+    caffeine-max-size: 2000
+    caffeine-ttl-seconds: 120
+    redis-ttl-seconds: 600
+  seckill:
+    stream-key: sk:stream:token
+    group: sk-token-group
+    consumer: consumer-1
+    # 抢购令牌有效期（分钟），超时未下单自动释放
+    token-expire-minutes: 15
+    # 是否在启动时自动创建消费者组
+    auto-create-group: true
+  order:
+    # 单笔订单最小起订量（吨）
+    min-qty: 1
+
+logging:
+  level:
+    root: info
+    com.xinji.erp: debug
+    org.springframework.data.redis: info
+
+---
+# ===================== dev =====================
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/xinji_erp?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true
+    username: root
+    password: 1234
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+  redis:
+    host: 127.0.0.1
+    port: 6379
+    database: 5
+    timeout: 3000ms
+    lettuce:
+      pool:
+        max-active: 32
+        max-idle: 16
+        min-idle: 4
+        max-wait: 2000ms
+
+---
+# ===================== prod =====================
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${MYSQL_HOST:127.0.0.1}:${MYSQL_PORT:3306}/xinji_erp?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:1234}
+  redis:
+    host: ${REDIS_HOST:127.0.0.1}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+    database: ${REDIS_DB:5}
+
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+
+logging:
+  level:
+    com.xinji.erp: info

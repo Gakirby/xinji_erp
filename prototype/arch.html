@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>鑫基矿业 · 技术架构说明</title>
+<link rel="stylesheet" href="assets/ui.css">
+
+</head>
+<body>
+<div class="topbar">
+  <div class="brand">
+    <div class="logo">鑫</div>
+    <div>
+      <div class="brand-t">鑫基矿业 · 技术架构说明</div>
+      <div class="brand-s">TECHNICAL DESIGN · REVIEW ONLY</div>
+    </div>
+  </div>
+  <div class="spacer"></div>
+  <div class="tag-mvp">开发评审用 · <b>不属于产品界面</b></div>
+</div><main class="page" id="view-arch">
+  <div class="arch">
+    <div class="arch-h">
+      <div>
+        <h2>技术架构 · 限时抢购链路</h2>
+        <p>订单与库存的高并发入口，难点不在“能抢”，而在“抢不超卖、发不重复、挂了能补”。核心思路是把一次抢购拆成两段：Redis 内一次 Lua 脚本完成资格判断与库存扣减并落消息，接口立刻返回订单号；真正的落库、凭证发放交给 Stream 消费者组异步完成，用补偿兜住异常。</p>
+        <div class="stack">
+          <span>Java 8</span><span>Spring Boot</span><span>MyBatis-Plus</span><span>MySQL</span><span>Redis</span><span>Redisson</span><span>Redis Lua</span><span>Redis Stream</span><span>Memcache</span><span>Caffeine</span><span>Canal</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer">
+      <div class="lb"><b>接入层</b>流量入口</div>
+      <div class="nodes">
+        <div class="nd"><b>Nginx</b>负载均衡 / 静态资源</div>
+        <div class="nd warm"><b>令牌桶限流</b>抢购接口 10,000 QPS</div>
+        <div class="nd"><b>活动开关</b>售罄即降级直返</div>
+        <div class="nd"><b>防重放</b>请求签名 + 幂等键</div>
+      </div>
+    </div>
+
+    <div class="layer">
+      <div class="lb"><b>应用层</b>Spring Boot 多实例</div>
+      <div class="nodes">
+        <div class="nd"><b>商品详情</b>多级缓存读</div>
+        <div class="nd hi"><b>抢购接口</b>执行 Lua 脚本</div>
+        <div class="nd"><b>活动管理</b>发布 / 预热</div>
+        <div class="nd"><b>订单查询</b>读已发放结果</div>
+        <div class="nd"><b>对账与结算</b>复用 ERP 模块</div>
+      </div>
+    </div>
+
+    <div class="layer">
+      <div class="lb"><b>缓存层</b>四级逐层回填</div>
+      <div class="nodes">
+        <div class="nd hi"><b>ScopeCaching</b>请求内上下文<br>命中 62.4%</div>
+        <div class="nd hi"><b>Caffeine</b>JVM 热点元数据<br>命中 88.1%</div>
+        <div class="nd warm"><b>Memcache</b>跨实例热点详情<br>命中 94.7%</div>
+        <div class="nd warm"><b>Redis</b>共享缓存 + 抢购资格<br>命中 99.2%</div>
+      </div>
+    </div>
+
+    <div class="layer">
+      <div class="lb"><b>消息层</b>削峰与解耦</div>
+      <div class="nodes">
+        <div class="nd"><b>Redis Stream</b>sk:stream:order</div>
+        <div class="nd"><b>消费组</b>sk-order-group · 4 实例</div>
+        <div class="nd warm"><b>pending-list</b>未 ACK 自动补偿</div>
+        <div class="nd"><b>死信处理</b>重试 3 次转人工</div>
+      </div>
+    </div>
+
+    <div class="layer">
+      <div class="lb"><b>存储层</b>唯一真相</div>
+      <div class="nodes">
+        <div class="nd dark"><b>MySQL</b>sku / stock / order / token_ledger</div>
+        <div class="nd dark"><b>binlog</b>Canal 订阅变更</div>
+        <div class="nd dark"><b>唯一索引</b>(user_id, sku_id) 兜底幂等</div>
+        <div class="nd dark"><b>ERP 主数据</b>物料 / 料仓 / 客户</div>
+      </div>
+    </div>
+
+    <div class="arch-2">
+      <div class="card">
+        <div class="card-h"><h3>抢购原子脚本</h3><span class="more">一次网络往返完成四件事</span></div>
+        <div class="card-b" style="padding:12px">
+          <div class="code"><span class="c">-- 资格 + 库存 + 一人一单 + 写 Stream，全部在 Redis 内原子完成</span>
+<span class="k">local</span> stockKey = KEYS[1]   <span class="c">-- sk:stock:{skuId}</span>
+<span class="k">local</span> userKey  = KEYS[2]   <span class="c">-- sk:user:{skuId}</span>
+<span class="k">local</span> stream   = KEYS[3]   <span class="c">-- sk:stream:order</span>
+<span class="k">local</span> uid  = ARGV[1]
+<span class="k">local</span> qty  = <span class="f">tonumber</span>(ARGV[2])
+<span class="k">local</span> oid  = ARGV[3]
+
+<span class="k">if</span> redis.call(<span class="s">'SISMEMBER'</span>, userKey, uid) == <span class="n">1</span> <span class="k">then</span>
+  <span class="k">return</span> <span class="n">-1</span>                        <span class="c">-- 重复抢购</span>
+<span class="k">end</span>
+<span class="k">local</span> stock = <span class="f">tonumber</span>(redis.call(<span class="s">'GET'</span>, stockKey) <span class="k">or</span> <span class="s">'-1'</span>)
+<span class="k">if</span> stock &lt; qty <span class="k">then</span>
+  <span class="k">return</span> <span class="n">-2</span>                        <span class="c">-- 库存不足</span>
+<span class="k">end</span>
+
+redis.call(<span class="s">'DECRBY'</span>, stockKey, qty)
+redis.call(<span class="s">'SADD'</span>,   userKey, uid)
+redis.call(<span class="s">'XADD'</span>,   stream, <span class="s">'*'</span>,
+    <span class="s">'uid'</span>, uid, <span class="s">'qty'</span>, qty, <span class="s">'oid'</span>, oid)
+<span class="k">return</span> stock - qty                    <span class="c">-- 剩余库存</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><h3>消费端幂等</h3><span class="more">重复消费 / 重启 / 并发三重兜底</span></div>
+        <div class="card-b" style="padding:12px">
+          <div class="code"><span class="c">// 用户维度锁 + 条件扣减 + 唯一索引，任意一层都能拦住重复发放</span>
+RLock lock = redisson.<span class="f">getLock</span>(
+    <span class="s">"lock:order:"</span> + uid + <span class="s">":"</span> + skuId);
+lock.<span class="f">tryLock</span>(<span class="n">3</span>, TimeUnit.SECONDS);
+<span class="k">try</span> {
+    <span class="c">// update stock set stock = stock - #{qty} where id = ? and stock &gt;= #{qty}</span>
+    <span class="k">int</span> rows = stockMapper.<span class="f">deduct</span>(skuId, qty);
+    <span class="k">if</span> (rows == <span class="n">0</span>) <span class="k">return</span>;        <span class="c">// 已售罄，幂等退出</span>
+
+    orderMapper.<span class="f">insert</span>(order);   <span class="c">// uk(user_id, sku_id) 兜底</span>
+    ledgerMapper.<span class="f">insert</span>(ledger); <span class="c">// 提货凭证账本</span>
+
+    stream.<span class="f">ack</span>(<span class="s">"sk-order-group"</span>, msgId); <span class="c">// 确认消费</span>
+} <span class="k">finally</span> {
+    lock.<span class="f">unlock</span>();
+}</div>
+          <div style="font-size:11.5px;color:var(--ink2);line-height:1.8;margin-top:11px">
+            <b style="color:var(--ink)">三重幂等：</b>① Redisson 用户维度锁，把同一用户的并发请求串行化；②
+            <code style="font-size:11px;background:#f2f5f7;padding:1px 5px;border-radius:3px">where stock &gt;= #{qty}</code>
+            条件扣减，数据库层兜住超卖；③ <code style="font-size:11px;background:#f2f5f7;padding:1px 5px;border-radius:3px">uk(user_id, sku_id)</code>
+            唯一索引，兜住重复消费与服务重启后的重放。
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <div class="card-h"><h3>抢购链路时序</h3><span class="more">同步段 &lt; 50ms 返回，异步段完成落库与发券</span></div>
+      <div class="arch-flow">
+        <div class="af"><b>1 点击抢购</b><small>前端拿幂等键</small></div>
+        <div class="afa">›</div>
+        <div class="af"><b>2 限流校验</b><small>令牌桶 + 活动开关</small></div>
+        <div class="afa">›</div>
+        <div class="af"><b>3 多级缓存</b><small>活动与 SKU 上下文</small></div>
+        <div class="afa">›</div>
+        <div class="af hot"><b>4 Lua 原子执行</b><small>资格 / 库存 / 一人一单 / 写 Stream</small></div>
+        <div class="afa">›</div>
+        <div class="af"><b>5 返回订单号</b><small>前端进入排队页</small></div>
+        <div class="afa">›</div>
+        <div class="af"><b>6 消费组拉取</b><small>4 实例并行消费</small></div>
+        <div class="afa">›</div>
+        <div class="af"><b>7 落库发放</b><small>锁 + 条件扣减 + 账本</small></div>
+        <div class="afa">›</div>
+        <div class="af hot"><b>8 ACK / 补偿</b><small>pending-list 重投</small></div>
+      </div>
+    </div>
+
+    <div class="arch-2">
+      <div class="card">
+        <div class="card-h"><h3>binlog 驱动的缓存同步</h3><span class="more">业务事务内不做多层双写</span></div>
+        <div class="card-b" style="padding:12px">
+          <div class="code"><span class="c">// 业务只写 MySQL，缓存由订阅端按数据类型分别处理</span>
+<span class="k">@Subscribe</span>(<span class="s">"canal.topic.sku"</span>)
+<span class="k">public void</span> <span class="f">onSkuChange</span>(SkuBinlogEvent e) {
+    <span class="k">if</span> (e.<span class="f">isDetail</span>()) {
+        <span class="c">// 详情类：主动同步到 Memcache，避免穿透</span>
+        memcache.<span class="f">set</span>(<span class="s">"sku:"</span> + e.<span class="f">getId</span>(), e.<span class="f">getAfter</span>(), <span class="n">1800</span>);
+    } <span class="k">else</span> {
+        <span class="c">// 聚合类：删除失效，等下次读回填</span>
+        redis.<span class="f">del</span>(<span class="s">"agg:sku:"</span> + e.<span class="f">getId</span>());
+    }
+    <span class="c">// 广播 JVM 本地缓存失效事件，避免各实例数据不一致</span>
+    cacheBus.<span class="f">publish</span>(<span class="s">"invalidate:sku:"</span> + e.<span class="f">getId</span>());
+}</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><h3>多级缓存回填</h3><span class="more">下层命中即回填上层</span></div>
+        <div class="card-b" style="padding:12px">
+          <div class="code"><span class="c">// 同一请求内重复读 SKU 上下文，直接命中请求级缓存</span>
+<span class="k">public</span> SkuVO <span class="f">getSku</span>(Long id) {
+    <span class="k">return</span> scope.<span class="f">get</span>(<span class="s">"sku:"</span> + id, () -&gt;        <span class="c">// L1 请求内</span>
+        jvm.<span class="f">get</span>(id, () -&gt;                   <span class="c">// L2 JVM</span>
+            memcache.<span class="f">get</span>(id, () -&gt;          <span class="c">// L3 跨实例</span>
+                redis.<span class="f">get</span>(id, () -&gt;      <span class="c">// L4 共享</span>
+                    loadFromDb(id)          <span class="c">// 回源</span>
+                ))));
+}</div>
+          <div style="font-size:11.5px;color:var(--ink2);line-height:1.75;margin-top:10px">
+            每一层命中都会把结果回填到上层，一次抢购请求内部原本要读 6 次 SKU 与活动配置，实际只剩 1 次回源。
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="three">
+      <div class="tcard">
+        <h5>缓存穿透 <span>不存在的数据</span></h5>
+        <p>对查不到的 SKU 写入空值缓存并设置 60 秒短 TTL，配合参数校验与布隆过滤，避免请求全部打到 MySQL。</p>
+        <span class="m">空值缓存 + 布隆过滤</span>
+      </div>
+      <div class="tcard">
+        <h5>缓存击穿 <span>热点 key 过期</span></h5>
+        <p>热点凭证包详情采用逻辑过期：过期后不阻塞读，先返回旧值，再由后台线程拿互斥锁重建，保证抢购瞬间不雪崩。</p>
+        <span class="m">逻辑过期 + 互斥锁重建</span>
+      </div>
+      <div class="tcard">
+        <h5>缓存雪崩 <span>大批同时失效</span></h5>
+        <p>TTL 加 30—60 秒随机抖动，四级缓存层层兜底，叠加接口限流与售罄降级，把峰值压力挡在 Redis 之前。</p>
+        <span class="m">随机 TTL + 多级 + 限流降级</span>
+      </div>
+    </div>
+  </div>
+</main>
+
+</body>
+</html>

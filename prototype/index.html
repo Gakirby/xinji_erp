@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>鑫基矿业 · 矿石配送 ERP 原型索引</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:#eef2f4;color:#141a20;-webkit-font-smoothing:antialiased;
+}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1180px;margin:0 auto;padding:0 28px}
+
+/* header */
+.hd{background:#0f1c25;color:#dbe6ed}
+.hd-in{max-width:1180px;margin:0 auto;padding:0 28px;height:58px;display:flex;align-items:center;gap:11px}
+.logo{width:28px;height:28px;border-radius:8px;background:linear-gradient(150deg,#2c7499,#163f57);
+  display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff}
+.hd b{font-size:13px;font-weight:600;letter-spacing:.3px}
+.hd .s{font-size:9.5px;color:#7f93a1;letter-spacing:1.2px;margin-top:1px}
+.hd .sp{flex:1}
+.hd .tag{font-size:10px;color:#8fa4b2;border:1px solid rgba(255,255,255,.16);
+  padding:3px 9px;border-radius:5px}
+
+/* hero */
+.hero{padding:38px 0 26px}
+.hero h1{font-size:25px;letter-spacing:-.4px;font-weight:700}
+.hero h1 em{font-style:normal;color:#1b4f6c}
+.hero p{margin-top:10px;font-size:13px;color:#5b6873;line-height:1.8;max-width:820px}
+.hero .warn{margin-top:14px;display:inline-flex;gap:8px;align-items:flex-start;
+  background:#fdf4e6;border:1px solid #f0e0c4;border-radius:8px;padding:9px 13px;font-size:11.5px;color:#8a6013}
+.hero .warn b{font-weight:700}
+
+/* end cards */
+.ends{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:18px}
+.end{background:#fff;border:1px solid #e2e8ec;border-radius:13px;overflow:hidden;
+  display:flex;flex-direction:column;transition:.18s}
+.end:hover{transform:translateY(-2px);box-shadow:0 14px 34px -18px rgba(18,38,50,.35)}
+.end .stripe{height:3px}
+.end .in{padding:18px 18px 16px;flex:1;display:flex;flex-direction:column}
+.end .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px}
+.end .ico{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:800;color:#fff}
+.end .who{font-size:9.5px;padding:3px 8px;border-radius:20px;font-weight:600;letter-spacing:.2px}
+.end h2{font-size:15px;font-weight:700;margin-bottom:5px}
+.end .desc{font-size:11.5px;color:#6b7883;line-height:1.75;min-height:60px}
+.end .pages{margin:12px 0 14px;display:flex;flex-wrap:wrap;gap:5px}
+.end .pages span{font-size:10px;color:#5b6873;background:#f2f5f7;border-radius:4px;padding:2.5px 7px}
+.end .go{margin-top:auto;display:flex;align-items:center;justify-content:space-between;
+  border-top:1px solid #eef1f4;padding-top:12px}
+.end .go .dom{font-size:10px;color:#9aa6af;font-family:ui-monospace,Consolas,monospace}
+.end .go .btn{font-size:11.5px;font-weight:600;color:#fff;background:#1b4f6c;
+  padding:6px 13px;border-radius:6px}
+.end.mall .stripe{background:#1b4f6c}
+.end.mall .ico{background:#1b4f6c}
+.end.mall .who{background:#eaf2f7;color:#1b4f6c}
+.end.mp .stripe{background:#0f8a5f}
+.end.mp .ico{background:#0f8a5f}
+.end.mp .who{background:#e8f6f0;color:#0f8a5f}
+.end.adm .stripe{background:#2b3a45}
+.end.adm .ico{background:#2b3a45}
+.end.adm .who{background:#eceff1;color:#2b3a45}
+
+/* section */
+.sec{margin-top:34px}
+.sec-h{display:flex;align-items:baseline;gap:10px;margin-bottom:13px}
+.sec-h h3{font-size:14.5px;font-weight:700}
+.sec-h span{font-size:11.5px;color:#8b95a1}
+
+/* table */
+.tb{background:#fff;border:1px solid #e2e8ec;border-radius:11px;overflow:hidden}
+table{width:100%;border-collapse:collapse}
+th,td{padding:11px 15px;text-align:left;font-size:11.5px;vertical-align:top;border-bottom:1px solid #eef1f4}
+th{background:#f7f9fa;font-weight:600;color:#5b6873;font-size:11px;letter-spacing:.2px}
+tr:last-child td{border-bottom:none}
+td.dim{color:#8b95a1;width:132px;font-weight:600;color:#5b6873}
+td code{font-family:ui-monospace,Consolas,monospace;font-size:10.5px;background:#f2f5f7;
+  padding:1.5px 5px;border-radius:4px;color:#1b4f6c}
+.tb .c-mall{color:#1b4f6c}
+.tb .c-mp{color:#0f8a5f}
+.tb .c-adm{color:#2b3a45}
+
+/* pools */
+.pools{display:grid;grid-template-columns:1fr 34px 1fr;gap:0;align-items:center;
+  background:#fff;border:1px solid #e2e8ec;border-radius:11px;padding:20px 22px}
+.pool{border-radius:9px;padding:14px 16px;border:1px solid #e2e8ec;background:#fafcfc}
+.pool.act{border-color:#f0e0c4;background:#fffaf1}
+.pool small{font-size:10px;color:#8b95a1;display:block;margin-bottom:3px}
+.pool b{font-size:20px;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
+.pool p{font-size:10.5px;color:#6b7883;margin-top:5px;line-height:1.65}
+.pool.act b{color:#b5590f}
+.arw{text-align:center;color:#a8b4bb;font-size:11px}
+.arw i{display:block;font-style:normal;font-size:9px;margin-bottom:2px}
+.pool-rules{margin-top:12px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.rule{background:#fff;border:1px solid #e2e8ec;border-radius:9px;padding:13px 15px}
+.rule b{font-size:11.5px;display:block;margin-bottom:5px}
+.rule p{font-size:10.5px;color:#6b7883;line-height:1.7}
+
+/* footnote */
+.ft{margin:38px 0 30px;padding-top:18px;border-top:1px solid #dfe6ea;
+  font-size:10.5px;color:#8b95a1;line-height:1.85}
+.ft b{color:#5b6873}
+@media (max-width:1000px){
+  .ends{grid-template-columns:1fr}
+  .pools{grid-template-columns:1fr;gap:12px}
+  .arw i{display:none}
+  .pool-rules{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="hd">
+  <div class="hd-in">
+    <div class="logo">鑫</div>
+    <div>
+      <b>吉林鑫基矿业 · 矿石配送 ERP</b>
+      <div class="s">PROTOTYPE INDEX · MVP</div>
+    </div>
+    <div class="sp"></div>
+    <div class="tag">原型 v2 · 静态演示</div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="hero">
+    <h1>三个端，<em>三套独立入口</em></h1>
+    <p>
+      网页商城、微信小程序面向客户，运营后台面向公司员工，三者物理分离、各自独立部署，
+      客户在任何入口都不会看到后台的任何页面。下面三个卡片是三个互不相通的工程，
+      共用同一套领域服务与库存口径。
+    </p>
+    <div class="warn">
+      <span>⚠</span>
+      <div><b>这是静态原型，不是可上线的系统。</b>页面内数据为演示数据，没有真实登录、接口与数据库；
+      登录页的门禁只是交互示意，真正的权限控制在后端网关。</div>
+    </div>
+  </div>
+
+  <div class="ends">
+
+    <div class="end mall">
+      <div class="stripe"></div>
+      <div class="in">
+        <div class="top">
+          <div class="ico">网</div>
+          <div class="who">客户自助 · PC</div>
+        </div>
+        <h2>网页商城</h2>
+        <div class="desc">
+          客户在自己的电脑上选矿、下单、抢购、查磅单、对账开票。
+          公网可访问，登录后只能看到本公司的价格与订单。
+        </div>
+        <div class="pages">
+          <span>商品与秒杀</span><span>采购车</span><span>下单</span><span>订单跟踪</span><span>对账开票</span>
+        </div>
+        <div class="go">
+          <span class="dom">mall.xinji.com</span>
+          <a class="btn" href="mall.html">打开原型</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="end mp">
+      <div class="stripe"></div>
+      <div class="in">
+        <div class="top">
+          <div class="ico">小</div>
+          <div class="who">客户自助 · 移动</div>
+        </div>
+        <h2>微信小程序</h2>
+        <div class="desc">
+          采购员在路上抢量、司机在现场查排队与磅单。
+          微信授权后绑定客户档案，与网页商城共用一套接口和库存。
+        </div>
+        <div class="pages">
+          <span>首页</span><span>限时抢购</span><span>抢购结果</span><span>订单</span><span>对账</span>
+        </div>
+        <div class="go">
+          <span class="dom">微信内搜索 · 鑫基矿业</span>
+          <a class="btn" href="miniapp.html">打开原型</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="end adm">
+      <div class="stripe"></div>
+      <div class="in">
+        <div class="top">
+          <div class="ico">后</div>
+          <div class="who">内部员工 · 需授权</div>
+        </div>
+        <h2>运营管理后台</h2>
+        <div class="desc">
+          订单、仓储、采购、调度过磅、财务、秒杀、生产报表。
+          员工账号登录 + 角色权限，仅限内网或 VPN 访问，客户无法进入。
+        </div>
+        <div class="pages">
+          <span>工作台</span><span>订单</span><span>仓储</span><span>采购</span><span>调度过磅</span>
+          <span>财务</span><span>秒杀</span>
+        </div>
+        <div class="go">
+          <span class="dom">erp.xinji.com（内网）</span>
+          <a class="btn" href="admin.html">打开原型</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="sec">
+    <div class="sec-h">
+      <h3>三端怎么隔离</h3>
+      <span>不是三套逻辑，是三个入口共用一套领域服务</span>
+    </div>
+    <div class="tb">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:120px">维度</th>
+            <th>网页商城</th>
+            <th>微信小程序</th>
+            <th>运营管理后台</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="dim">使用者</td>
+            <td>客户采购员、财务</td>
+            <td>客户采购员、司机</td>
+            <td>鑫基矿业员工</td>
+          </tr>
+          <tr>
+            <td class="dim">访问方式</td>
+            <td>公网域名，需登录</td>
+            <td>微信内，授权后使用</td>
+            <td>内网 / VPN，工位 IP 白名单</td>
+          </tr>
+          <tr>
+            <td class="dim">登录凭证</td>
+            <td>手机号 + 短信验证码<br><span style="color:#8b95a1">或客户账号密码</span></td>
+            <td>微信授权 + 手机号绑定客户档案</td>
+            <td>员工账号 + 密码 + 动态口令</td>
+          </tr>
+          <tr>
+            <td class="dim">接口前缀</td>
+            <td><code>/api/client/**</code></td>
+            <td><code>/api/client/**</code><br><span style="color:#8b95a1;font-size:10px">与网页商城同一组接口</span></td>
+            <td><code>/api/admin/**</code></td>
+          </tr>
+          <tr>
+            <td class="dim">鉴权模型</td>
+            <td>客户 token，绑定 <code>customer_id</code>，只能读自己的数据</td>
+            <td>同左，额外绑定 <code>openid</code></td>
+            <td>员工 token + RBAC 角色 + 数据范围</td>
+          </tr>
+          <tr>
+            <td class="dim">可见数据</td>
+            <td>本公司价格、库存、订单、账单</td>
+            <td>同左</td>
+            <td>全公司订单、成本、供应商价、毛利</td>
+          </tr>
+          <tr>
+            <td class="dim">前端工程</td>
+            <td><code>mall-web</code></td>
+            <td><code>mp-weixin</code></td>
+            <td><code>admin-web</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-h">
+      <h3>为什么必须分开，而不是放进一个系统</h3>
+    </div>
+    <div class="pool-rules">
+      <div class="rule">
+        <b>安全边界</b>
+        <p>后台里有成本价、供应商、毛利、客户授信。这些数据一旦随客户端包体一起下发，等于把底牌交给客户。物理分开后，客户端代码里根本没有后台的路由与接口。</p>
+      </div>
+      <div class="rule">
+        <b>发布节奏</b>
+        <p>商城改一次活动页，不应该让正在结账的财务跟着发版；后台加一个报表，也不该让客户重新加载页面。三个工程独立构建、独立回滚。</p>
+      </div>
+      <div class="rule">
+        <b>流量与故障隔离</b>
+        <p>秒杀的瞬时流量只打客户端接口与活动库存池，打不到财务和仓储的库表。后台做报表跑批时，不会拖慢客户下单。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-h">
+      <h3>库存双池模型</h3>
+      <span>活动库存独立于销售库存，两池互不占用</span>
+    </div>
+    <div class="pools">
+      <div class="pool">
+        <small>销售可售池</small>
+        <b>4,044 吨</b>
+        <p>正常订单可用量 = 料仓库存 − 活动划拨 − 已冻结。网页商城与小程序展示的就是这个数。</p>
+      </div>
+      <div class="arw"><i>划拨</i>→</div>
+      <div class="pool act">
+        <small>活动库存池</small>
+        <b>2,500 吨</b>
+        <p>活动开始时从销售池划出固定吨位，写入独立的 <code style="font-family:ui-monospace,Consolas,monospace">sk:stock:*</code> 键，只被活动订单扣减。</p>
+      </div>
+    </div>
+    <div class="pool-rules">
+      <div class="rule">
+        <b>划拨要留痕</b>
+        <p>每次划拨生成一条仓储流水（活动池转入），活动结束剩余量回拨销售池，同样记流水。库存台账始终能对上物理库存。</p>
+      </div>
+      <div class="rule">
+        <b>售罄不抢占</b>
+        <p>活动池空了就是售罄，正常订单不受影响；反过来正常订单爆单，也不会把活动池的货挪走。</p>
+      </div>
+      <div class="rule">
+        <b>三端口径同源</b>
+        <p>同一个 SKU 在商城、小程序、后台看到的是同一组数字，差异只在展示：客户看可售量，员工看总量与拆分明细。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-h">
+      <h3>其他交付物</h3>
+    </div>
+    <div class="tb">
+      <table>
+        <tbody>
+          <tr>
+            <td class="dim">技术架构</td>
+            <td>
+              <a href="arch.html" style="color:#1b4f6c;font-weight:600">打开架构说明 →</a>
+              <div style="color:#8b95a1;font-size:10.5px;margin-top:3px">
+                限时抢购链路、多级缓存、Lua 原子扣减、Stream 异步发放与补偿 —— 开发评审用，不属于任何一端的产品界面。
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="ft">
+    <b>原型范围</b>：本目录下 4 个 HTML 为静态演示，不含真实接口、鉴权、数据库。<br>
+    <b>下一步</b>：确认三端边界与库存双池口径后，进入数据库设计（订单 / 库存双池 / 磅单 / 对账）与 Spring Boot 工程骨架搭建。
+  </div>
+
+</div>
+</body>
+</html>

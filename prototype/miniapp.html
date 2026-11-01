@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>鑫基矿业 · 微信小程序原型</title>
+<link rel="stylesheet" href="assets/ui.css">
+
+<style>
+.aside .nflag{}
+.nflag{display:inline-block;font-size:9.5px;color:#8b95a1;letter-spacing:.3px;
+  border:1px solid #e2e8ec;background:#fff;border-radius:4px;padding:2px 7px;margin-bottom:10px}
+</style>
+</head>
+<body>
+<main class="page" id="view-client">
+  <div class="client-stage">
+
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="screen">
+          <div class="sbar">
+            <span>9:41</span>
+            <span class="dots"><i></i><i></i><i></i><i></i></span>
+            <span style="display:flex;align-items:center;gap:6px">
+              <span style="font-size:10px">5G</span>
+              <span class="bat"><u></u></span>
+            </span>
+          </div>
+
+          <div class="ph-scroll" id="phScroll">
+
+            <!-- 页1：商品 -->
+            <div class="cp on" id="cp-home">
+              <div class="c-hero">
+                <div class="c-loc">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#a9c3d3" stroke-width="2"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>
+                  <b>吉林市 · 龙潭区</b><span>直供矿区</span>
+                </div>
+                <div class="c-h1">骨料<span> · </span>矿石 直供</div>
+                <div class="c-h2">吉林鑫基矿业有限公司 · 自有矿山 · 当日装车</div>
+                <div class="c-search"><span class="ico"></span>搜索 石灰石 / 机制砂 / 铁精粉</div>
+              </div>
+
+              <div class="c-cats">
+                <span class="on">全部</span><span>石灰石</span><span>机制砂</span><span>铁精粉</span><span>尾矿</span>
+              </div>
+
+              <div style="padding:12px 18px 0">
+                <div class="sk-banner">
+                  <div class="l">
+                    <b>双十一 · 矿料限时抢购</b>
+                    <small>机制砂 ¥69/吨 · 限量 300 吨 · 每人限购 60 吨</small>
+                  </div>
+                  <div class="r">02:14:36</div>
+                </div>
+              </div>
+
+              <div class="c-sec">
+                <div class="c-sec-t"><h4>在售矿产品</h4><em>可售量已扣活动划拨</em></div>
+
+                <div class="goods">
+                  <div class="thumb stone">石灰石</div>
+                  <div class="g-main">
+                    <div class="g-name">石灰石 5-10mm</div>
+                    <div class="g-spec">压碎值 ≤10% · 含泥量 ≤1%</div>
+                    <div class="g-price"><strong>¥86</strong><em>/吨</em></div>
+                    <div class="g-meta"><span>可售 <b>2,344</b> 吨</span><span>起订 30 吨</span></div>
+                  </div>
+                  <div class="g-add">+</div>
+                </div>
+
+                <div class="goods">
+                  <div class="thumb stone">石灰石</div>
+                  <div class="g-main">
+                    <div class="g-name">石灰石 10-20mm</div>
+                    <div class="g-spec">压碎值 ≤9% · 针片状 ≤8%</div>
+                    <div class="g-price"><strong>¥82</strong><em>/吨</em></div>
+                    <div class="g-meta"><span>可售 <b>1,160</b> 吨</span><span>起订 30 吨</span></div>
+                  </div>
+                  <div class="g-add">+</div>
+                </div>
+
+                <div class="goods">
+                  <div class="thumb sand">机制砂</div>
+                  <div class="g-main">
+                    <div class="g-name">机制砂 · 中砂</div>
+                    <div class="g-spec">细度模数 2.6 · 石粉含量 8%</div>
+                    <div class="g-price"><strong>¥95</strong><em>/吨</em></div>
+                    <div class="g-meta"><span>可售 <b class="warn">260</b> 吨</span><span class="pill a">库存紧张</span></div>
+                  </div>
+                  <div class="g-add">+</div>
+                </div>
+
+                <div class="goods">
+                  <div class="thumb iron">铁精粉</div>
+                  <div class="g-main">
+                    <div class="g-name">铁精粉 65%</div>
+                    <div class="g-spec">TFe 65.2% · 水分 8.5%</div>
+                    <div class="g-price"><strong>¥760</strong><em>/吨</em></div>
+                    <div class="g-meta"><span>库存 <b>480</b> 吨</span><span>锁量需审批</span></div>
+                  </div>
+                  <div class="g-add">+</div>
+                </div>
+              </div>
+
+                          </div>
+
+            <!-- 页：限时抢购 -->
+            <div class="cp" id="cp-seckill">
+              <div class="c-nav"><span class="back">‹</span>限时抢购</div>
+
+              <div class="sk-hero">
+                <div class="tag">DOUBLE 11 · 矿料专场</div>
+                <h3>双十一 · 限时抢购</h3>
+                <p>11-01 00:00 — 11-03 23:59 · 库存有限，抢完即止</p>
+                <div class="cd2">
+                  <span>距结束</span><b>02</b><b>14</b><b>36</b>
+                </div>
+              </div>
+
+              <div style="padding:10px 12px 0">
+                <div class="sk-item">
+                  <div class="th"></div>
+                  <div class="bd">
+                    <b>机制砂 · 中砂</b>
+                    <small>细度模数 2.6 · 石粉 8%</small>
+                    <div class="pr"><b>¥69</b><i>/吨</i><del>¥95</del></div>
+                    <div class="skp" style="margin-top:7px"><u style="width:68%"></u></div>
+                    <div class="prog"><span>已抢 68%</span><span>剩 96 吨</span></div>
+                  </div>
+                  <button class="sk-btn">抢购</button>
+                </div>
+
+                <div class="sk-item">
+                  <div class="th stone"></div>
+                  <div class="bd">
+                    <b>石灰石 5-10mm</b>
+                    <small>压碎值 ≤10% · 含泥量 ≤1%</small>
+                    <div class="pr"><b>¥72</b><i>/吨</i><del>¥86</del></div>
+                    <div class="skp" style="margin-top:7px"><u style="width:67%"></u></div>
+                    <div class="prog"><span>已抢 67%</span><span>剩 264 吨</span></div>
+                  </div>
+                  <button class="sk-btn">抢购</button>
+                </div>
+
+                <div class="sk-item">
+                  <div class="th stone"></div>
+                  <div class="bd">
+                    <b>石灰石 10-20mm</b>
+                    <small>压碎值 ≤9% · 针片状 ≤8%</small>
+                    <div class="pr"><b>¥68</b><i>/吨</i><del>¥82</del></div>
+                    <div class="skp" style="margin-top:7px"><u style="width:41%"></u></div>
+                    <div class="prog"><span>已抢 41%</span><span>剩 413 吨</span></div>
+                  </div>
+                  <button class="sk-btn">抢购</button>
+                </div>
+
+                <div class="sk-item" style="opacity:.72">
+                  <div class="th"></div>
+                  <div class="bd">
+                    <b>铁精粉 65%</b>
+                    <small>TFe 65.2% · 水分 8.5%</small>
+                    <div class="pr"><b>¥680</b><i>/吨</i><del>¥760</del></div>
+                    <div class="skp" style="margin-top:7px"><u style="width:100%"></u></div>
+                    <div class="prog"><span>已售罄</span><span>0 吨</span></div>
+                  </div>
+                  <button class="sk-btn dis">已售罄</button>
+                </div>
+
+                <div class="sk-rule">
+                  <div><i></i><span>每人每 SKU 限购 60 吨，超出部分按原价结算</span></div>
+                  <div><i></i><span>抢购成功后 15 分钟内下单，超时自动释放库存</span></div>
+                  <div><i></i><span>抢购名额以 Redis 原子扣减为准，余量实时同步</span></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 页：抢购排队 -->
+            <div class="cp" id="cp-queue">
+              <div class="c-nav"><span class="back">‹</span>抢购结果</div>
+
+              <div class="q-hero">
+                <div class="ring"></div>
+                <h3>抢购成功 · 正在发放</h3>
+                <p>请求已进入队列，后台正在生成订单</p>
+                <div class="no">订单号 SK2026110100238 · 排队 #1,208</div>
+              </div>
+
+              <div class="steps2">
+                <div class="si ok"><span class="d">1</span><b>抢购资格校验</b><span class="t">6ms</span></div>
+                <div class="bar2"></div>
+                <div class="si ok"><span class="d">2</span><b>库存原子扣减</b><span class="t">3ms</span></div>
+                <div class="bar2"></div>
+                <div class="si ok"><span class="d">3</span><b>写入消息队列</b><span class="t">11ms</span></div>
+                <div class="bar2"></div>
+                <div class="si run"><span class="d">4</span><b>订单落库 · token 账本</b><span class="t">进行中</span></div>
+                <div class="bar2"></div>
+                <div class="si"><span class="d">5</span><b>发放完成通知</b><span class="t">—</span></div>
+              </div>
+
+              <div class="panel" style="margin-top:9px">
+                <div class="panel-t">抢购信息</div>
+                <div class="kv"><span>商品</span><b>机制砂 · 中砂</b></div>
+                <div class="kv"><span>抢购单价</span><b>¥69.00 / 吨</b></div>
+                <div class="kv"><span>数量</span><b>60 吨</b></div>
+                <div class="kv"><span>预计金额</span><b style="color:#b5590f">¥4,140.00</b></div>
+                <div class="kv"><span>锁定时长</span><b>15 分钟内下单</b></div>
+              </div>
+            </div>
+
+            <!-- 页2：确认下单 -->
+            <div class="cp" id="cp-order">
+              <div class="c-nav"><span class="back">‹</span>确认订单</div>
+
+              <div class="addr">
+                <div class="pin"></div>
+                <div class="a-main">
+                  <b>长春亚泰建材 · 二道区 2 号料场</b>
+                  <p>吉林省长春市二道区英俊镇 · 建龙北路 18 号</p>
+                  <p><em style="margin-left:0">张伟 &nbsp;138****6621</em></p>
+                </div>
+                <span style="font-size:12px;color:var(--muted);align-self:center">›</span>
+              </div>
+
+              <div class="panel">
+                <div class="panel-t">提货方式</div>
+                <div class="ways">
+                  <div class="on">配送 <small>自有车队</small></div>
+                  <div>自提 <small>矿场装车</small></div>
+                </div>
+              </div>
+
+              <div class="panel">
+                <div class="panel-t">商品明细 <span>共 2 项</span></div>
+                <div class="line-item">
+                  <div class="li-thumb stone"></div>
+                  <div class="li-main"><b>石灰石 5-10mm</b><small>96 吨 × ¥86.00</small></div>
+                  <div class="li-r"><b>¥8,256</b><small>可发 2,344 吨</small></div>
+                </div>
+                <div class="line-item" style="border-top:1px dashed var(--line2);margin-top:10px;padding-top:10px">
+                  <div class="li-thumb sand"></div>
+                  <div class="li-main"><b>机制砂 · 中砂</b><small>30 吨 × ¥95.00</small></div>
+                  <div class="li-r"><b>¥2,850</b><small>可发 260 吨</small></div>
+                </div>
+              </div>
+
+              <div class="panel">
+                <div class="panel-t">配送信息</div>
+                <div class="kv"><span>期望到货</span><b>11-02 08:00 — 12:00</b></div>
+                <div class="kv"><span>卸货方式</span><b>自卸 / 后八轮</b></div>
+                <div class="kv"><span>备注</span><span style="color:var(--muted)">需随车磅单，勿超载</span></div>
+              </div>
+
+              <div class="panel">
+                <div class="panel-t">费用</div>
+                <div class="kv"><span>商品金额（126 吨）</span><b>¥11,106.00</b></div>
+                <div class="kv"><span>运费（30 吨起免）</span><b class="cut">¥0.00</b></div>
+                <div class="kv"><span>优惠券 满5000减200</span><b class="cut">-¥200.00</b></div>
+              </div>
+            </div>
+
+            <!-- 页3：订单跟踪 -->
+            <div class="cp" id="cp-track">
+              <div class="c-nav"><span class="back">‹</span>订单详情</div>
+
+              <div class="status-hero">
+                <div class="st"><i></i>已过磅出厂 · 运输中</div>
+                <div class="sub">单号 XJ20261101008 · 预计 11-02 10:30 送达</div>
+                <div class="row">
+                  <div><small>司机 / 车牌</small><b>李国强 · 吉B·8K275</b></div>
+                  <div><small>结算净重</small><b>33.49 吨</b></div>
+                </div>
+              </div>
+
+              <div style="padding:12px 16px 0">
+                <div class="weigh">
+                  <div class="wt"><span>地磅单 WX-20261101-0386</span><b>已同步仓储 / 财务</b></div>
+                  <div class="grid3">
+                    <div><small>毛重</small><b>49.86<i>t</i></b></div>
+                    <div><small>皮重</small><b>16.20<i>t</i></b></div>
+                    <div><small>净重</small><b>33.66<i>t</i></b></div>
+                  </div>
+                  <div class="note">扣水 0.5% → 结算 33.49 吨 · 单价 ¥86.00 · 金额 ¥2,880.14</div>
+                </div>
+              </div>
+
+              <div class="panel" style="margin-top:9px">
+                <div class="panel-t">流转进度</div>
+                <div class="tl">
+                  <div class="tl-i done"><div class="tl-dot"></div><div class="tl-body"><b>提交订单</b><small>等待销售审核</small></div><span class="tl-time">11-01 09:12</span></div>
+                  <div class="tl-i done"><div class="tl-dot"></div><div class="tl-body"><b>审核通过 · 已锁库存</b><small>库存由 3,240 冻结 96 吨（活动池另计）</small></div><span class="tl-time">09:26</span></div>
+                  <div class="tl-i done"><div class="tl-dot"></div><div class="tl-body"><b>已派车</b><small>吉B·8K275 / 李国强</small></div><span class="tl-time">10:05</span></div>
+                  <div class="tl-i now"><div class="tl-dot"></div><div class="tl-body"><b>过磅出厂</b><small>净重 33.66 吨，分 2 车发运</small></div><span class="tl-time">11:38</span></div>
+                  <div class="tl-i"><div class="tl-dot"></div><div class="tl-body"><b>客户签收</b><small>签收后自动生成对账单</small></div><span class="tl-time">—</span></div>
+                  <div class="tl-i"><div class="tl-dot"></div><div class="tl-body"><b>对账 · 开票</b><small>按月批次结算</small></div><span class="tl-time">—</span></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 页4：对账 -->
+            <div class="cp" id="cp-bill">
+              <div class="c-nav"><span class="back">‹</span>我的账单</div>
+
+              <div class="bill-sum">
+                <div style="font-size:11.5px;color:var(--muted)">本月已结算金额（10 月）</div>
+                <div class="big">¥108,420<small>含税</small></div>
+                <div class="row">
+                  <div>已开票<b>¥62,000</b></div>
+                  <div>待对账<b>3 笔</b></div>
+                  <div>累计发货<b>1,286 吨</b></div>
+                </div>
+              </div>
+
+              <div class="credit">
+                <div class="ct"><span>信用额度</span><b>已用 ¥386,400 / ¥500,000</b></div>
+                <div class="bar"><u class="warn" style="width:77%"></u></div>
+                <div class="cb-note"><span>剩余可用 ¥113,600</span><span>超额度需审批</span></div>
+              </div>
+
+              <div class="panel" style="margin-top:9px">
+                <div class="panel-t">对账批次</div>
+                <div class="bill-i">
+                  <div class="bi-l"><b>DZ-202610-03</b><small>10-16 至 10-31 · 12 车次</small></div>
+                  <div class="bi-r"><b>¥46,180</b><small><span class="pill a">待确认</span></small></div>
+                </div>
+                <div class="bill-i">
+                  <div class="bi-l"><b>DZ-202610-02</b><small>10-01 至 10-15 · 9 车次</small></div>
+                  <div class="bi-r"><b>¥38,240</b><small><span class="pill g">已开票</span></small></div>
+                </div>
+                <div class="bill-i">
+                  <div class="bi-l"><b>DZ-202609-04</b><small>09-16 至 09-30 · 6 车次</small></div>
+                  <div class="bi-r"><b>¥24,000</b><small><span class="pill b">已回款</span></small></div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="c-foot hide" id="cfoot"></div>
+
+          <div class="cartbar">
+          <div class="cb-i">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M3 4h2l2.4 11h10L20 7H6"/><circle cx="9" cy="19" r="1.6"/><circle cx="17" cy="19" r="1.6"/></svg>
+          </div>
+          <div class="cb-txt"><small>2 项 · 96 吨</small><b>¥8,256</b></div>
+          <button>去下单</button>
+          </div>
+
+          <div class="c-tabbar" id="ctab">
+            <a class="on" data-p="cp-home"><span class="navico d1"></span>首页</a>
+            <a data-p="cp-seckill"><span class="navico d5"></span>抢购</a>
+            <a data-p="cp-track"><span class="navico d2"></span>订单</a>
+            <a data-p="cp-bill"><span class="navico d3"></span>对账</a>
+          </div>
+        </div>
+      </div>
+
+      <div style="font-size:11.5px;color:var(--muted);text-align:center">
+        客户端 H5 / 小程序 · 点击底部四个 Tab 切换
+      </div>
+    </div>
+
+    <aside class="notes">
+      <div class="nflag">评审批注 · 不属于小程序界面</div>
+      <h3>客户端：把「口头报量」变成在线订单</h3>
+      <p class="lead">
+        现状痛点：客户通过电话 / 微信报量，销售手工登记，库存与财务各自记一本账。
+        这一层解决的是<b>订单入口唯一化</b>——网页商城与小程序共用同一套接口，订单一落库，库存、调度、财务同时可见。
+      </p>
+
+      <div class="note-card">
+        <div class="nt">01 商品与实时库存</div>
+        <h5>看到的价格和余量，就是能发的量</h5>
+        <p>矿产品按品种 + 规格建 SKU 上架，库存数由仓储模块实时回写。库存低于安全线时自动打「紧张」标记，避免超卖。</p>
+        <span class="src">沿用 takeout 的 分类 / 菜品体系</span>
+      </div>
+
+      <div class="note-card">
+        <div class="nt">02 下单即锁量</div>
+        <h5>提交订单 = 冻结库存，不是先接单再找货</h5>
+        <p>下单成功后按吨数冻结对应料仓库存，审核通过转预占、发货后扣减。并发抢量用 Redis 原子扣减兜住。</p>
+        <span class="src">沿用 dpMycaode 的 Redis 锁库存方案</span>
+      </div>
+
+      <div class="note-card">
+        <div class="nt">03 限时抢购</div>
+        <h5>抢购与下单是两条链路，抢到的是提货凭证</h5>
+        <p>抢购只做资格判断与库存预占，接口立刻返回订单号；落库和凭证发放异步完成。抢到后 15 分钟内下单核销，超时自动释放。</p>
+        <span class="src">Redis Lua + Stream 消费者组</span>
+      </div>
+
+      <div class="note-card">
+        <div class="nt">04 磅单可视化</div>
+        <h5>客户能自己看到毛重、皮重、扣水</h5>
+        <p>过磅数据是矿石行业最容易扯皮的环节。把地磅单直接推到客户手机上，净重/扣水/结算吨数一目了然。</p>
+        <span class="src">新增 · 矿石行业特性</span>
+      </div>
+
+      <div class="note-card">
+        <div class="nt">05 客户自助对账</div>
+        <h5>账单、额度、发票全部在线</h5>
+        <p>签收自动进对账批次，客户在线确认后开票。信用额度实时扣减，超额下单直接拦截，减少坏账。</p>
+        <span class="src">新增 · 财务闭环</span>
+      </div>
+    </aside>
+  </div>
+</main>
+<script>
+(function(){
+  var ctab = document.getElementById('ctab');
+  var cfoot = document.getElementById('cfoot');
+  var FOOT = {
+    'cp-home': null,
+    'cp-seckill': '<div class="sum">抢购价<b>¥69.00</b></div><button>立即抢购</button>',
+    'cp-queue': '<button class="ghost">返回活动</button><button>查看订单</button>',
+    'cp-order': '<div class="sum">应付<b>¥10,906.00</b></div><button>提交订单</button>',
+    'cp-track': '<button class="ghost">联系司机</button><button>查看磅单</button>',
+    'cp-bill': '<button class="ghost">下载对账单</button><button>申请开票</button>'
+  };
+  function setFoot(id){
+    var h = FOOT[id];
+    if(h){ cfoot.innerHTML = h; cfoot.classList.remove('hide'); }
+    else { cfoot.innerHTML = ''; cfoot.classList.add('hide'); }
+  }
+  function showClientPage(id){
+    document.querySelectorAll('.cp').forEach(function(p){ p.classList.toggle('on', p.id === id); });
+    var tabFor = (id === 'cp-queue') ? 'cp-seckill' : id;
+    [].forEach.call(ctab.children, function(x){ x.classList.toggle('on', x.dataset.p === tabFor); });
+    setFoot(id);
+    var ps = document.getElementById('phScroll'); if(ps) ps.scrollTop = 0;
+  }
+  ctab.addEventListener('click', function(e){
+    var a = e.target.closest('a'); if(!a) return;
+    e.preventDefault(); showClientPage(a.dataset.p);
+  });
+  // 提货方式切换
+  document.querySelectorAll('.ways').forEach(function(w){
+    w.addEventListener('click', function(e){
+      var d = e.target.closest('div'); if(!d || d === w) return;
+      [].forEach.call(w.children, function(x){ x.classList.remove('on'); });
+      d.classList.add('on');
+    });
+  });
+  var h = (location.hash || '').replace('#','');
+  if(h) showClientPage(h);
+})();
+</script>
+</body>
+</html>
