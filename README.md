@@ -127,7 +127,7 @@ node deploy/preview.mjs     # 默认 8090，代理 /api 到 8080
 | <http://localhost:8090/admin/> | 运营后台（员工账号登录） |
 | <http://localhost:8090/m/> | 手机端（建议用浏览器 F12 切手机视图） |
 
-`preview.mjs` 是零依赖的 Node 脚本（不需要 npm install），它按 `deploy/nginx.conf` 的同一套规则做 history 路由回退和 `/api` 反向代理，用来在没装 nginx 的机器上验证路由行为。
+`preview.mjs` 是零依赖的 Node 脚本（不需要 npm install），它按 `deploy/nginx.conf` 的同一套规则做 history 路由回退和 `/api` 反向代理，**在没有 nginx 的机器上的兜底方案**。日常推荐用下面的方式 C（真 nginx）。
 后端地址不用手动指定：它按 `8081 → 8080 → 8082` 探测谁活着（`start-backend.bat` 起的 jar 在 8081，IDEA 里跑的在 8080），探测不到会明确提示「后端没起来」。
 
 **方式 B：整站 Docker（含 nginx + MySQL + Redis）**
@@ -139,20 +139,31 @@ docker compose up -d --build
 
 启动后 nginx 监听 `80`，直接访问 <http://localhost/> 即可（需要 Docker Desktop 已启动）。
 
-**方式 C：双击脚本启动（适合不敲命令行）**
+**方式 C：双击脚本启动（推荐 —— 真 nginx，包里自带，无需安装）**
 
-`scripts/` 下有三个 Windows 批处理，**双击即可**，服务以后台方式运行，关掉黑窗口也不会停：
+`deploy/nginx-runtime/` 里带了一个 **Windows 版 nginx 1.27.5**（官方二进制，4.6 MB），
+不需要你装任何东西。双击 `scripts/start-nginx.bat`：
+
+1. 自动探测后端（8080 → 8081），把地址写进 nginx 配置
+2. 从模板 `deploy/nginx.local.conf.tpl` 生成当前机器的 `conf/nginx.conf`
+   （端口默认 **8090**，被占用会自动顺延）
+3. 启动真正的 nginx（独立进程，关掉黑窗口不会停），并自动打开首页
+
+完整链路：**浏览器 → nginx(8090) 返回页面 → 页面里的 /api/** → nginx 转发给后端(8080) → 返回数据渲染**。
 
 | 脚本 | 作用 |
 | --- | --- |
-| `scripts/start-web.bat` | 起前端预览（8090），自动探测后端在 8081 还是 8080，并自动打开首页 |
-| `scripts/stop-web.bat` | 停掉 8090 上的预览服务（按端口找进程 kill，不影响其它 node） |
-| `scripts/start-backend.bat` | 起后端 jar 到 8081（不依赖 IDEA，前提：MySQL、Redis 已启动） |
+| `scripts/start-nginx.bat` | 启动真 nginx（8090），自动探测后端、生成配置、开浏览器 |
+| `scripts/stop-nginx.bat` | 停止 nginx |
+| `scripts/start-all.bat` | 一键全起：后端 jar（8080）+ nginx（8090），后端没起会自动拉 jar |
+| `scripts/start-backend.bat` | 只起后端 jar 到 8080（不依赖 IDEA，前提：MySQL、Redis 已启动） |
 
-传端口：`start-web.bat 8091`。Linux / macOS 用 `scripts/start-web.sh`（同样支持 `./scripts/start-web.sh 8091`）。
+传端口：`start-nginx.bat 8091`。生成的配置与日志在 `deploy/nginx-runtime/conf/` 和 `logs/`。
 
-> 脚本会自己判断 `deploy/html` 在不在，不在就先 `npm install && npm run build`；
-> 端口被占用会自动往后顺延（8090 占用就用 8091），日志写在项目根目录 `preview.log`。
+> 换一台电脑也能用：整个项目目录拷过去（路径建议纯英文，Windows 版 nginx 对中文路径支持差），
+> 双击 `start-nginx.bat` 即可 —— 配置里的项目路径是启动时按当前目录动态生成的，不用改任何文件。
+>
+> 上服务器（Linux）时不用这个 runtime，直接把 `deploy/html` 拷过去 + 用 `deploy/nginx.conf`（listen 80 版）。
 
 **前端开发模式（改代码热更新）**
 
@@ -200,12 +211,6 @@ xinji-erp/
 │   ├── admin/                 # 运营后台（14 页，Element Plus）：看板、订单、物料、库存…
 │   ├── mobile/                # 手机端（7 页）：430px 手机壳 + 底部 tabbar，含注册
 │   └── scripts/build-all.mjs  # 三端一次性构建到 deploy/html
-├── deploy/                    # 部署相关
-│   ├── nginx.conf             # 三端路径隔离 + /api 反代 + 缓存与压缩
-│   ├── Dockerfile             # node 构建三端 → nginx 托管（多阶段）
-│   ├── docker-compose.yml     # mysql + redis + server + web 整套编排
-│   ├── preview.mjs            # 零依赖本地预览（模拟 nginx 规则，无需 Docker）
-│   └── html/                  # 构建产物（npm run build 生成）
 ├── server/                    # 后端工程（模块化单体）
 │   ├── pom.xml
 │   ├── Dockerfile             # maven 构建 → JRE 运行
@@ -227,11 +232,20 @@ xinji-erp/
 │           └── lua/seckill.lua# 秒杀原子脚本
 ├── prototype/                 # 早期高保真静态原型（保留做设计对照，不参与构建）
 ├── docs/                      # 部署文档、接口文档
+├── deploy/
+│   ├── nginx.conf             # Linux/Docker 用 nginx 配置（listen 80）
+│   ├── nginx.local.conf.tpl   # Windows 本机 nginx 配置模板（脚本按实际路径生成）
+│   ├── nginx-runtime/         # Windows 版 nginx 1.27.5（自带，无需安装）
+│   ├── Dockerfile             # node 构建三端 → nginx:1.27 托管
+│   ├── docker-compose.yml     # mysql + redis + server + web 整套
+│   ├── preview.mjs            # 零依赖 Node 预览（无 nginx 时的兜底）
+│   └── html/                  # 三端构建产物（npm run build 的输出，nginx 托管的就是它）
 ├── scripts/                   # 一键启动脚本（Windows .bat + Linux/Mac .sh）
-│   ├── start-web.bat          # 起前端预览 8090，自动探测后端，自动开浏览器
-│   ├── stop-web.bat           # 停预览服务
-│   ├── start-backend.bat      # 起后端 jar 到 8081（不依赖 IDEA）
-│   └── start-web.sh           # Linux / macOS 版
+│   ├── start-all.bat          # 一键全起：后端 jar 8080 + nginx 8090
+│   ├── start-nginx.bat        # 启动真 nginx（8090），自动探测后端、生成配置
+│   ├── stop-nginx.bat         # 停止 nginx
+│   ├── start-backend.bat      # 起后端 jar 到 8080（不依赖 IDEA）
+│   └── start-web.sh           # Linux / macOS 版（node 预览兜底）
 └── docker-compose.yml         # 本地依赖（MySQL + Redis，可选 Memcached）
 ```
 
